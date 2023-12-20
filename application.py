@@ -159,10 +159,10 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
             stripped_length = len(expression)
             parentheses_removed = original_length - stripped_length
 
-        if re.search(r'(?:a|aspect)(?:<=|<|>|>=|=|:)(.+)', expression):
+        if re.search(r'\b(?:a|aspect)(?:<=|<|>|>=|=|:)(.+)', expression):
             attribute_name, comparison_operator, attribute_value = parse_numerical_expression(
                 expression)
-
+                
             if comparison_operator == ':':
                 comparison_operator = '>='
 

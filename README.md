@@ -13,7 +13,7 @@ api.swu-db.com routes requests to API Gateway<br/>
 
 # API Gateway
 
-A REST API within API Gatway provides two resources to users:<br/>
+A REST API within API Gateway provides two resources to users:<br/>
 
 /Cards/Search - GET is a way for users to submit the same search query string that is used when performing a search through the website.<br/>
 For example, the following retrieves all cards with a Cost equal to 3 in a human readable JSON format:<br/>
