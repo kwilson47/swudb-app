@@ -28,7 +28,10 @@
 
 .header {
     margin-bottom: 1rem;
-    margin-top: 1rem;
+    /* margin-top: 1rem; */
+    background-color: lightgrey;
+    padding: 10px;
+    font-size: 18px;
 }
   
 
@@ -138,13 +141,6 @@ p {
     display: flex;
 }
 
-.card-details,
-.card-details-container {
-    justify-content: center;
-    flex-direction: column;
-    display: flex;
-}
-
 /* #cardTable tr > *:nth-child(1) {
     display: none;
 } */
@@ -244,6 +240,50 @@ p {
     gap: 0px;
 }
 
+.card-type-span {
+    padding-left: 5px;
+    font-weight: bold;
+}
+
+.card-text,
+.card-back-text {
+    border-left: 1px solid black;
+    margin-left: 10px;
+    padding-left: 5px;
+}
+
+.card-traits {
+    padding-left: 5px;
+    font-weight: bold;
+    font-style: italic;
+}
+
+.card-stats {
+    padding-left: 5px;
+}
+
+.card-artist {
+    padding-left: 5px;
+}
+
+.card-set {
+    padding-left: 5px;
+}
+
+.card-epic-action {
+    padding-left: 5px;
+}
+
+.card-power {
+    color: darkred;
+    font-weight: bold;
+}
+
+.card-hp {
+    color: darkblue;
+    font-weight: bold;
+}
+
 .aspect-icon img {
     /* Adjust the desired width and height */
     width: 30px;
@@ -277,8 +317,9 @@ p {
 
 .card-info {
     flex: 1 1 auto;
-    border: rgba(255, 255, 255, 0.3);
+    border: 1px solid black;
     justify-content: left;
+    max-width: 600px;
 }
 
 .card-info div p {
@@ -289,11 +330,30 @@ p {
     padding-top: 50px;
     padding-left: 15px;
     padding-right: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* Media query for smaller screens, adjust the max-width as needed */
+@media (max-width: 768px) {
+    .card-details {
+        flex-direction: column; /* Stack items vertically on smaller screens */
+    }
+
+    .card-image {
+        margin-right: 0; /* Remove margin for better spacing on smaller screens */
+        margin-bottom: 15px;
+    }
 }
 
 
 .red-text {
     color: maroon;
+}
+
+.blue-text {
+    color: blue;
 }
 
 

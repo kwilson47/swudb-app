@@ -31,7 +31,7 @@
 
             {% if card.type == 'Leader'%}
                 <div class="card-type">
-                    <p>{{ card.type }}</p>
+                    <p><span class="card-type-span">LEADER</span></p>
                 </div>
                 <div class="card-traits">
                     {% if card.traits %}
@@ -57,35 +57,38 @@
 
                 <br />
                 <div class="card-type">
-                    <p>{{ card.type }} Unit - {% if card.arenas %} {{ ', '.join(card.arenas) }} {% endif %}</p>
+                    <p><span class="card-type-span">LEADER UNIT - {% if card.arenas %} {% for arena in card.arenas %}
+                        {{ arena|upper }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span>. Cost: {{card.cost}}</p>
+                </div>
+
+                <div class="card-traits">
                     {% if card.traits %}
-                    
                     <p>{{ ' • '.join(card.traits) }}</p>
-
                     {% endif %}
-
                 </div>
 
 
-                <div class="card-stats">
-                    <p>Cost: {{ card.cost }}</p>
-                    <p>Power: {{ card.power }}</p>
-                    <p>HP: {{ card.hp }}</p>
-                </div>
+                
                 {% if card.back_text %}
                 <div class="card-back-text">
                     <p>{{ card.back_text | safe }}</p>
                 </div>
                 {% endif %}
+
+                <div class="card-stats">
+                    <p><span class="card-power">{{ card.power }}</span> / <span class="card-hp">{{card.hp}}</span></p>
+                </div>
                 <div class="card-artist">
-                    <p>Artist: {{ card.artist }}</p>
+                    <p>Artist: <a href='/search?q=artist%3A"{{ card.artist|urlencode }}"'>{{ card.artist }}</a></p>
                 </div>
             {% else %}
                 <div class="card-type">
-                <p>{{ card.type }}
-                    {% if card.arenas %} - {{ ', '.join(card.arenas) }}
+                <p><span class="card-type-span">{{ card.type|upper }}{% if card.arenas %} - 
+                    {% for arena in card.arenas %}
+                        {{ arena|upper }}{% if not loop.last %}, {% endif %}{% endfor %}
+                    {% endif %}</span>{% if card.cost %}. Cost: {{card.cost}}.{% endif %}
                 </p>
-                {% endif %}
+                
 
 
                 </div>
@@ -106,17 +109,19 @@
                 </div>
                 {% endif %}
                 <div class="card-stats">
-                    <p>Cost: {{ card.cost }}</p>
-                    <p>Power: {{ card.power }}</p>
-                    <p>HP: {{ card.hp }}</p>
+                    {% if card.power %}
+                    <p><span class="card-power">{{ card.power }}</span> / <span class="card-hp">{{card.hp}}</span></p>
+                    {% elif card.hp %}
+                    <p><span class="card-hp">Starting HP: {{card.hp}}</span></p>
+                    {% endif %}
                 </div>
                 <div class="card-artist">
-                    <p>Artist: {{ card.artist }}</p>
+                    <p>Artist: <a href='/search?q=artist%3A"{{ card.artist|urlencode }}"'>{{ card.artist }}</a></p>
                 </div>
             {% endif %}
 
             <div class="card-set">
-                <p>Set: {{ card.set }} {{ card.number }}/252</p>
+                <p>Set: <a href="/search?q=set%3A{{ card.set }}">{{ card.set }}</a> {{ card.number }}/252</p>
             </div>
         </div>
     </div>
