@@ -67,6 +67,52 @@ def get_card(set_id, card_number):
         # Card not found
         return None
 
+def get_next_card(set_id, card_number):
+
+    response = dynamodb.query(
+        TableName=dynamodb_table,
+        KeyConditionExpression='setId = :set_id and cardNumber > :card_number',
+        ExpressionAttributeValues={
+            ':set_id': {'S': set_id},
+            ':card_number': {'S': card_number}
+        },
+        Limit=1,
+        ScanIndexForward=True
+    )
+
+    items = response['Items']
+
+    if items:
+        # setID and cardNumber are unique so it's safe to just grab the first one
+        return process_item(items[0])
+    else:
+        # Card not found
+        return None
+
+
+def get_previous_card(set_id, card_number):
+
+    response = dynamodb.query(
+        TableName=dynamodb_table,
+        KeyConditionExpression='setId = :set_id and cardNumber < :card_number',
+        ExpressionAttributeValues={
+            ':set_id': {'S': set_id},
+            ':card_number': {'S': card_number}
+        },
+        Limit=1,
+        ScanIndexForward=False
+    )
+
+    items = response['Items']
+
+    if items:
+        # setID and cardNumber are unique so it's safe to just grab the first one
+        return process_item(items[0])
+    else:
+        # Card not found
+        return None
+
+
 
 def search_cards(search_input, sort_field='name', sort_order='asc', leader='', base=''):
     """
@@ -162,7 +208,7 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
         if re.search(r'\b(?:a|aspect)(?:<=|<|>|>=|=|:)(.+)', expression):
             attribute_name, comparison_operator, attribute_value = parse_numerical_expression(
                 expression)
-                
+
             if comparison_operator == ':':
                 comparison_operator = '>='
 
@@ -633,7 +679,9 @@ def card(set, number, name):
     # Retrieve card information based on the set, number, and name
     # Render the card page template with the retrieved card information
     my_card = get_card(set, number)
-    return render_template('card.html', set=set, number=number, name=name, card=my_card)
+    next_card = get_next_card(set, number)
+    prev_card = get_previous_card(set, number)
+    return render_template('card.html', set=set, number=number, name=name, card=my_card, next_card=next_card, prev_card=prev_card)
 
 @app.route('/submit-feedback', methods=['POST'])
 def submit_feedback():
@@ -798,7 +846,8 @@ def replace_aspects(text):
         'Villainy': 'villainy.png',
         'Command': 'command.png',
         'Cunning': 'cunning.png',
-        'Aggression': 'aggression.png'
+        'Aggression': 'aggression.png',
+        'Exhaust': 'exhaust.png'
     }
 
     for aspect, icon_filename in aspect_icons.items():

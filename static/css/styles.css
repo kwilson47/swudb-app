@@ -275,12 +275,12 @@ p {
 }
 
 .card-power {
-    color: darkred;
+    color: crimson;
     font-weight: bold;
 }
 
 .card-hp {
-    color: darkblue;
+    color: darkcyan;
     font-weight: bold;
 }
 
@@ -335,15 +335,32 @@ p {
     justify-content: center;
 }
 
+.card-details-container {
+    display: flex;
+    flex-direction: column;
+}
+
 /* Media query for smaller screens, adjust the max-width as needed */
 @media (max-width: 768px) {
     .card-details {
         flex-direction: column; /* Stack items vertically on smaller screens */
     }
 
+    .card-iterator-container {
+        flex-direction: column;
+    }
+
     .card-image {
         margin-right: 0; /* Remove margin for better spacing on smaller screens */
         margin-bottom: 15px;
+    }
+
+    .prev-link {
+        margin-bottom: 20px;
+    }
+
+    .next-link {
+        margin-top: 20px;
     }
 }
 
@@ -353,7 +370,19 @@ p {
 }
 
 .blue-text {
-    color: blue;
+    color: darkcyan;
+}
+
+.cost-text {
+    color: goldenrod;
+}
+
+.power-text {
+    color: crimson;
+}
+
+.health-text {
+    color: darkcyan;
 }
 
 
@@ -522,6 +551,46 @@ code {
     flex-basis: 100%;
 }
 
+.card-iterator-container {
+    display: flex;
+    justify-content: space-between;
+    padding: 100px;
+}
+
+.button {
+    padding: 10px 20px;
+    text-decoration: none;
+    color: white;
+    background-color: #007bff; /* Adjust the background color as needed */
+    border: 1px solid #007bff; /* Adjust the border color as needed */
+    border-radius: 5px;
+}
+
+/* Adjust styles for each link as needed */
+.prev-link {
+    justify-self: flex-start;
+}
+
+.center-link {
+    justify-self: center;
+}
+
+.next-link {
+    justify-self: flex-end;
+}
+
+.prev-link::before {
+    content: '← ';
+    position: absolute;
+    left: 105px; /* Adjust the distance from the text */
+}
+
+.next-link::after {
+    content: ' →';
+    position: absolute;
+    right: 105px; /* Adjust the distance from the text */
+}
+
 
 #advanced-btn {
     align-items: left;
@@ -535,7 +604,7 @@ code {
     cursor: pointer;
 }
 
-#advanced-btn:hover {
+#advanced-btn:hover   {
     background-color: #45a049;
 }
 

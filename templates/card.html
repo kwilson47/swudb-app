@@ -58,7 +58,7 @@
                 <br />
                 <div class="card-type">
                     <p><span class="card-type-span">LEADER UNIT - {% if card.arenas %} {% for arena in card.arenas %}
-                        {{ arena|upper }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span>. Cost: {{card.cost}}</p>
+                        {{ arena|upper }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span>. Cost: <span class="cost-text">{{card.cost}}</span></p>
                 </div>
 
                 <div class="card-traits">
@@ -85,8 +85,7 @@
                 <div class="card-type">
                 <p><span class="card-type-span">{{ card.type|upper }}{% if card.arenas %} - 
                     {% for arena in card.arenas %}
-                        {{ arena|upper }}{% if not loop.last %}, {% endif %}{% endfor %}
-                    {% endif %}</span>{% if card.cost %}. Cost: {{card.cost}}.{% endif %}
+                        {{ arena|upper }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span>{% if card.cost %}. Cost: <span class="cost-text">{{card.cost}}</span>.{% endif %}
                 </p>
                 
 
@@ -122,8 +121,18 @@
 
             <div class="card-set">
                 <p>Set: <a href="/search?q=set%3A{{ card.set }}">{{ card.set }}</a> {{ card.number }}/252</p>
-            </div>
+            </div> 
         </div>
     </div>
+    <div class="card-iterator-container">
+        {% if prev_card.name %}
+            <a href="/card/{{ prev_card.set }}/{{ prev_card.number }}/{{ prev_card.name|replace('/', '-')|urlencode }}" class="button prev-link">{{ prev_card.name }}</a>
+        {% endif %}
+        <a href="/search?q=set%3A{{ card.set }}" class="button center-link">{{ card.set }}</a>
+        {% if next_card.name %}
+            <a href="/card/{{ next_card.set }}/{{ next_card.number }}/{{ next_card.name|replace('/', '-')|urlencode }}" class="button next-link">{{ next_card.name }}</a>
+        {% endif %}
+    </div>
+    
 </div>
 {% endblock %}
