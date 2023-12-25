@@ -340,6 +340,10 @@ p {
     flex-direction: column;
 }
 
+.tooltip-inner {
+    text-align: left !important;
+}
+
 /* Media query for smaller screens, adjust the max-width as needed */
 @media (max-width: 768px) {
     .card-details {
@@ -375,14 +379,17 @@ p {
 
 .cost-text {
     color: goldenrod;
+    font-weight: bold;
 }
 
 .power-text {
     color: crimson;
+    font-weight: bold;
 }
 
 .health-text {
     color: darkcyan;
+    font-weight: bold;
 }
 
 
