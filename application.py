@@ -412,15 +412,18 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
                     construct_expression_attribute_name(attribute_name))
             else:
                 attribute_name = 'searchName'
-                attribute_placeholder = attribute_name + '_' + expression
-                attribute_placeholder = re.sub(r'[ "\']', '_', attribute_placeholder)
+                # attribute_placeholder = attribute_name + '_' + expression
+                # attribute_placeholder = re.sub(r'[ "\']', '_', attribute_placeholder)
                 comparison_operator = 'contains'
                 attribute_value = expression.lower()
                 result_string += " the name includes " + attribute_value
-                filter_expression += f"contains (#{attribute_name}, :{attribute_placeholder})"
+                # filter_expression += f"contains (#{attribute_name}, :{attribute_placeholder})"
+                filter_expression += f"contains (#{attribute_name}, :{attribute_name})"
                 
+                # expression_values.update(construct_expression_value(
+                #     attribute_placeholder, attribute_value, is_numeric=False))
                 expression_values.update(construct_expression_value(
-                    attribute_placeholder, attribute_value, is_numeric=False))
+                    attribute_name, attribute_value, is_numeric=False))
                 expression_attribute_names.update(
                     construct_expression_attribute_name(attribute_name))
 
