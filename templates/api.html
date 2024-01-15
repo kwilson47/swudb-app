@@ -59,6 +59,58 @@ API Documentation -
 
     </section>
 
+    <section class="aspect-wrapper">
+        <div class="aspect-desc">
+            <h2> GET /catalog/traits</h2>
+            <p>Supported format: json
+            </p>
+            <p>Returns a list of all traits</p>
+            <p> Valid Query Parameters are:</p>
+            </p>
+            <p> <strong>format</strong> : String : 'json' is only currently supported<br />
+                <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
+            </p>
+            <p>For example: https://api.swu-db.com/catalog/traits <br />
+                Retrieves all traits</p>
+            <p></p>
+        </div>
+    </section>
+    <section class="aspect-wrapper">
+        <div class="aspect-desc">
+            <h2> GET /catalog/keywords</h2>
+            <p>Supported format: json
+            </p>
+            <p>Returns a list of all keywords</p>
+            <p> Valid Query Parameters are:</p>
+            </p>
+            <p> <strong>format</strong> : String : 'json' is only currently supported<br />
+                <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
+            </p>
+            <p>For example: https://api.swu-db.com/catalog/keywords <br />
+                Retrieves all keywords</p>
+            <p></p>
+        </div>
+    </section>
+    <section class="aspect-wrapper">
+        <div class="aspect-desc">
+            <h2> GET /catalog/card-names</h2>
+            <p>Supported format: json
+            </p>
+            <p>Returns a list of all unique card names</p>
+            <p> Valid Query Parameters are:</p>
+            </p>
+            <p> <strong>format</strong> : String : 'json' is only currently supported<br />
+                <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
+                <strong>subtitles</strong> : Boolean : If true, card names will include the subtitles appended to the name (This is the default behavior)<br />
+            </p>
+            <p>For example: https://api.swu-db.com/catalog/card-names?subtitles=false <br />
+                Retrieves all unique card names, but ignores subtitles</p>
+            <p>For example: https://api.swu-db.com/catalog/card-names <br />
+                Retrieves all unique card names with their subtitles</p>
+            <p></p>
+        </div>
+    </section>
+
 
 
 </div>

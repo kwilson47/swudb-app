@@ -198,6 +198,20 @@
           }
           return data;  // return teh data for the other orthognal types
         }
+      },
+      {
+        targets: [7, 8],
+        render: function (data, type, row) {
+          if (type === 'type' || type === 'sort') {
+              // Check if the data starts with a "+" or "-"
+              if (typeof data === 'string' && (data.startsWith('+') || data.startsWith('-'))) {
+                  // Extract the numeric part and convert it to a number
+                  return parseFloat(data);
+              }
+              return parseFloat(data);  // Numeric value
+          }
+          return data;  // Return the data for other orthogonal types
+      }
       }]
     });
   
@@ -276,29 +290,22 @@
             break;
         }
         cards.sort((a, b) => {
-            console.log(a.dataset)
-            console.log(sortFieldName)
             const aProperty = a.dataset[sortFieldName];
             const bProperty = b.dataset[sortFieldName];
-  
   
             if (aProperty === "None") return -sortOrder;
             if (bProperty === "None") return sortOrder;
   
   
             // Convert numeric attributes to numbers for numerical comparison
-            const numA = !isNaN(aProperty) ? parseFloat(aProperty) : aProperty;
-            const numB = !isNaN(bProperty) ? parseFloat(bProperty) : bProperty;
-  
+            const numA = !isNaN(aProperty) ? parseFloat(aProperty) : (aProperty === "+1" ? parseFloat(aProperty) : 0);
+            const numB = !isNaN(bProperty) ? parseFloat(bProperty) : (bProperty === "+1" ? parseFloat(bProperty) : 0);
             if (numA < numB) return -sortOrder;
             if (numA > numB) return sortOrder;
             return 0;
         });
-        console.log(cards)
+
         // const cards = document.querySelectorAll(".card-img");
-          cards.forEach(card => {
-              console.log(card.dataset);
-          });
         // Append the sorted cards back to the cardGrid
         cardGrid.innerHTML = '';
         cards.forEach(card => cardGrid.appendChild(card));
