@@ -184,21 +184,21 @@
       "order": [[2, 'asc']],
       "scrollX": true,
       'aoColumnDefs': [ 
-    {
-        targets: 1,
-        render: function (data, type, row) {
-          if (type === 'type' || type === 'sort') {
-            if (data === 'T01') {
-              return 253;  // Some arbitrary high number
-            }
-            if (data === 'T02') {
-                return 254;  // Some arbitrary high number
-              }
-            return data;  // Numeric value
-          }
-          return data;  // return teh data for the other orthognal types
-        }
-      },
+    // {
+    //     targets: 1,
+    //     render: function (data, type, row) {
+    //       if (type === 'type' || type === 'sort') {
+    //         if (data === 'T01') {
+    //           return 253;  // Some arbitrary high number
+    //         }
+    //         if (data === 'T02') {
+    //             return 254;  // Some arbitrary high number
+    //           }
+    //         return data;  // Numeric value
+    //       }
+    //       return data;  // return teh data for the other orthognal types
+    //     }
+    //   },
       {
         targets: [7, 8],
         render: function (data, type, row) {
