@@ -8,124 +8,188 @@ API Documentation -
 {% endblock %}
 
 {% block content %}
+
+
+
 <div class="content">
-    <h1>API Documentation</h1>
+    <h1>API Resources</h1>
 
-    <section class="math-search-wrapper">
-        <div class="aspect-desc">
-            <h2> GET /Cards/{Set}/{Card}</h2>
-            <p>Supported formats: json, image, txt
-            </p>
-            <p>Returns a single card that matches the given set and number</p>
-            <p> Valid Query Parameters are:</p>
-            </p>
-            <p> <strong>format</strong> : String : 'json', 'csv', or 'txt' (defaults to 'json')<br />
-                <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
-                <strong>face</strong> : Boolean : If true, returns the back art of the image, if it exists<br />
-            </p>
-            <p>For example: https://api.swu-db.com/cards/sor/10 <br />
-                Returns Darth Vader - Dark Lord of the Sith</p>
-            <p></p>
-            <p>https://api.swu-db.com/cards/sor/82?format=image <br />
-                Redirects to the image of Emperor's Royal Guard</p>
-        </div>
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="card-tab" data-bs-toggle="tab" data-bs-target="#card-tab-pane" type="button" role="tab" aria-controls="card-tab-pane" aria-selected="true">Card</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="set-tab" data-bs-toggle="tab" data-bs-target="#set-tab-pane" type="button" role="tab" aria-controls="set-tab-pane" aria-selected="false">Set</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="search-tab" data-bs-toggle="tab" data-bs-target="#search-tab-pane" type="button" role="tab" aria-controls="search-tab-pane" aria-selected="false">Search</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="card-names-tab" data-bs-toggle="tab" data-bs-target="#card-names-tab-pane" type="button" role="tab" aria-controls="card-names-tab-pane" aria-selected="false">Card Names</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="traits-tab" data-bs-toggle="tab" data-bs-target="#traits-tab-pane" type="button" role="tab" aria-controls="traits-tab-pane" aria-selected="true">Traits</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="keywords-tab" data-bs-toggle="tab" data-bs-target="#keywords-tab-pane" type="button" role="tab" aria-controls="keywords-tab-pane" aria-selected="false">Keywords</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="artist-names-tab" data-bs-toggle="tab" data-bs-target="#artist-names-tab-pane" type="button" role="tab" aria-controls="artist-names-tab-pane" aria-selected="false">Artist Names</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="powers-tab" data-bs-toggle="tab" data-bs-target="#powers-tab-pane" type="button" role="tab" aria-controls="powers-tab-pane" aria-selected="false">Powers</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="hps-tab" data-bs-toggle="tab" data-bs-target="#hps-tab-pane" type="button" role="tab" aria-controls="hps-tab-pane" aria-selected="false">HPs</button>
+              </li>
+          </ul>
+          <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="card-tab-pane" role="tabpanel" aria-labelledby="card-tab" tabindex="0"><div class="aspect-desc">
+                <a id="card-lookup"><h2> GET /Cards/{Set}/{Card}</h2></a>
+                <p>Supported formats: json, image, txt
+                </p>
+                <p>Returns a single card that matches the given set and number</p>
+                <p> Valid Query Parameters are:</p>
+                </p>
+                <p> <strong>format</strong> : String : 'json', 'csv', or 'txt' (defaults to 'json')<br />
+                    <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
+                    <strong>face</strong> : Boolean : If true, returns the back art of the image, if it exists<br />
+                </p>
+                <p>For example: https://api.swu-db.com/cards/sor/10 <br />
+                    Returns Darth Vader - Dark Lord of the Sith</p>
+                <p></p>
+                <p>https://api.swu-db.com/cards/sor/82?format=image <br />
+                    Redirects to the image of Emperor's Royal Guard</p>
+            </div></div>
+            <div class="tab-pane fade" id="set-tab-pane" role="tabpanel" aria-labelledby="set-tab" tabindex="0"><div class="aspect-desc">
+                <a id="set-lookup"><h2> GET /Cards/{Set}</h2></a>
+                <p>Supported formats: json, csv
+                </p>
+                <p>Returns all cards in the given set</p>
+                <p>(This is equivalent to GET /cards/search?q=set:sor)</p>
+                <p> Valid Query Parameters are:</p>
+                </p>
+                <p> <strong>format</strong> : String : 'json' or 'csv'<br />
+                    <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
+                    <strong>order</strong> : String : The column you wish to order results by<br />
+                    <strong>dir</strong> : String : The direction of the sort (defaults to 'asc')<br />
+                </p>
+                <p>For example: https://api.swu-db.com/cards/sor <br />
+                    Returns all cards in Spirit of Rebellion</p>
+                <p></p>
+            </div></div>
+            <div class="tab-pane fade" id="search-tab-pane" role="tabpanel" aria-labelledby="search-tab" tabindex="0"><div class="aspect-desc">
+                <a id="search"><h2> GET /Cards/Search</h2></a>
+                <p>Supported formats: json, csv
+                </p>
+                <p>Returns a list of cards that match the given search</p>
+                <p> Valid Query Parameters are:</p>
+                </p>
+                <p><strong>q (required)</strong> : String : The search query to perform <br />
+                    <strong>format</strong> : String : 'json' or 'csv'<br />
+                    <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
+                    <strong>order</strong> : String : The column you wish to order results by<br />
+                    <strong>dir</strong> : String : The direction of the sort (defaults to 'asc')<br />
+                </p>
+                <p> Valid input for order: <br />
+                    'name', 'setnumber', 'power', 'cost', 'hp', 'type', 'rarity', 'traits', 'aspects', 'artist', 'arenas',
+                </p>
+                <p>For example: https://api.swu-db.com/cards/search?q=set:sor&format=csv&order=setnumber <br />
+                    Retrieves all cards in the SOR set in CSV format sorted by set number</p>
+                <p></p>
+                <p>https://api.swu-db.com/cards/search?q=c=3&pretty=true <br />
+                    Retrieves all cards with a Cost of 3 in human readable JSON format</p>
+            </div></div>
+            <div class="tab-pane fade" id="card-names-tab-pane" role="tabpanel" aria-labelledby="card-names-tab" tabindex="0"><div class="aspect-desc">
+                <a id="card-names"><h2> GET /catalog/card-names</h2></a>
+                <p>Supported format: json
+                </p>
+                <p>Returns a list of all unique card names</p>
+                <p> Valid Query Parameters are:</p>
+                </p>
+                <p> <strong>format</strong> : String : 'json' is only currently supported<br />
+                    <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
+                    <strong>subtitles</strong> : Boolean : If true, card names will include the subtitles appended to the name (This is the default behavior)<br />
+                </p>
+                <p>For example: https://api.swu-db.com/catalog/card-names?subtitles=false <br />
+                    Retrieves all unique card names, but ignores subtitles</p>
+                <p>For example: https://api.swu-db.com/catalog/card-names <br />
+                    Retrieves all unique card names with their subtitles</p>
+                <p></p>
+            </div></div>
+            <div class="tab-pane fade" id="traits-tab-pane" role="tabpanel" aria-labelledby="traits-tab" tabindex="0"><div class="aspect-desc">
+                <a id="traits"><h2> GET /catalog/traits</h2></a>
+                <p>Supported format: json
+                </p>
+                <p>Returns a list of all traits</p>
+                <p> Valid Query Parameters are:</p>
+                </p>
+                <p> <strong>format</strong> : String : 'json' is only currently supported<br />
+                    <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
+                </p>
+                <p>For example: https://api.swu-db.com/catalog/traits <br />
+                    Retrieves all traits</p>
+                <p></p>
+            </div></div>
+            <div class="tab-pane fade" id="keywords-tab-pane" role="tabpanel" aria-labelledby="keywords-tab" tabindex="0"><div class="aspect-desc">
+                <a id="keywords"><h2> GET /catalog/keywords</h2></a>
+                <p>Supported format: json
+                </p>
+                <p>Returns a list of all keywords</p>
+                <p> Valid Query Parameters are:</p>
+                </p>
+                <p> <strong>format</strong> : String : 'json' is only currently supported<br />
+                    <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
+                </p>
+                <p>For example: https://api.swu-db.com/catalog/keywords <br />
+                    Retrieves all keywords</p>
+                <p></p>
+            </div></div>
+            <div class="tab-pane fade" id="artist-names-tab-pane" role="tabpanel" aria-labelledby="artist-names-tab" tabindex="0"><div class="aspect-desc">
+                <a id="artist-names"><h2> GET /catalog/artist-names</h2></a>
+                <p>Supported format: json
+                </p>
+                <p>Returns a list of all artists</p>
+                <p> Valid Query Parameters are:</p>
+                </p>
+                <p> <strong>format</strong> : String : 'json' is only currently supported<br />
+                    <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
+                </p>
+                <p>For example: https://api.swu-db.com/catalog/artist-names <br />
+                    Retrieves all artists</p>
+                <p></p>
+            </div></div>
+            <div class="tab-pane fade" id="powers-tab-pane" role="tabpanel" aria-labelledby="powers-tab" tabindex="0"><div class="aspect-desc">
+                <a id="powers"><h2> GET /catalog/powers</h2></a>
+                <p>Supported format: json
+                </p>
+                <p>Returns a list of all powers</p>
+                <p> Valid Query Parameters are:</p>
+                </p>
+                <p> <strong>format</strong> : String : 'json' is only currently supported<br />
+                    <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
+                </p>
+                <p>For example: https://api.swu-db.com/catalog/powers <br />
+                    Retrieves all powers</p>
+                <p></p>
+            </div></div>
+            <div class="tab-pane fade" id="hps-tab-pane" role="tabpanel" aria-labelledby="hps-tab" tabindex="0"><div class="aspect-desc">
+                <a id="hps"><h2> GET /catalog/hps</h2></a>
+                <p>Supported format: json
+                </p>
+                <p>Returns a list of all HPs</p>
+                <p> Valid Query Parameters are:</p>
+                </p>
+                <p> <strong>format</strong> : String : 'json' is only currently supported<br />
+                    <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
+                </p>
+                <p>For example: https://api.swu-db.com/catalog/hps <br />
+                    Retrieves all HPs</p>
+                <p></p>
+            </div></div>
+          </div>
 
-    </section>
-
-    <section class="aspect-wrapper">
-        <div class="aspect-desc">
-            <h2> GET /Cards/Search</h2>
-            <p>Supported formats: json, csv
-            </p>
-            <p>Returns a list of cards that match the given search</p>
-            <p> Valid Query Parameters are:</p>
-            </p>
-            <p><strong>q (required)</strong> : String : The search query to perform <br />
-                <strong>format</strong> : String : 'json' or 'csv'<br />
-                <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
-                <strong>order</strong> : String : The column you wish to order results by<br />
-                <strong>dir</strong> : String : The direction of the sort (defaults to 'asc')<br />
-            </p>
-            <p> Valid input for order: <br />
-                'name', 'setnumber', 'power', 'cost', 'hp', 'type', 'rarity', 'traits', 'aspects', 'artist', 'arenas',
-            </p>
-            <p>For example: https://api.swu-db.com/cards/search?q=set:sor&format=csv&order=setnumber <br />
-                Retrieves all cards in the SOR set in CSV format sorted by set number</p>
-            <p></p>
-            <p>https://api.swu-db.com/cards/search?q=c=3&pretty=true <br />
-                Retrieves all cards with a Cost of 3 in human readable JSON format</p>
-        </div>
-
-
-    </section>
-
-    <section class="aspect-wrapper">
-        <div class="aspect-desc">
-            <h2> GET /catalog/traits</h2>
-            <p>Supported format: json
-            </p>
-            <p>Returns a list of all traits</p>
-            <p> Valid Query Parameters are:</p>
-            </p>
-            <p> <strong>format</strong> : String : 'json' is only currently supported<br />
-                <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
-            </p>
-            <p>For example: https://api.swu-db.com/catalog/traits <br />
-                Retrieves all traits</p>
-            <p></p>
-        </div>
-    </section>
-    <section class="aspect-wrapper">
-        <div class="aspect-desc">
-            <h2> GET /catalog/keywords</h2>
-            <p>Supported format: json
-            </p>
-            <p>Returns a list of all keywords</p>
-            <p> Valid Query Parameters are:</p>
-            </p>
-            <p> <strong>format</strong> : String : 'json' is only currently supported<br />
-                <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
-            </p>
-            <p>For example: https://api.swu-db.com/catalog/keywords <br />
-                Retrieves all keywords</p>
-            <p></p>
-        </div>
-    </section>
-    <section class="aspect-wrapper">
-        <div class="aspect-desc">
-            <h2> GET /catalog/card-names</h2>
-            <p>Supported format: json
-            </p>
-            <p>Returns a list of all unique card names</p>
-            <p> Valid Query Parameters are:</p>
-            </p>
-            <p> <strong>format</strong> : String : 'json' is only currently supported<br />
-                <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
-                <strong>subtitles</strong> : Boolean : If true, card names will include the subtitles appended to the name (This is the default behavior)<br />
-            </p>
-            <p>For example: https://api.swu-db.com/catalog/card-names?subtitles=false <br />
-                Retrieves all unique card names, but ignores subtitles</p>
-            <p>For example: https://api.swu-db.com/catalog/card-names <br />
-                Retrieves all unique card names with their subtitles</p>
-            <p></p>
-        </div>
-    </section>
-    <section class="aspect-wrapper">
-        <div class="aspect-desc">
-            <h2> GET /catalog/artist-names</h2>
-            <p>Supported format: json
-            </p>
-            <p>Returns a list of all artists</p>
-            <p> Valid Query Parameters are:</p>
-            </p>
-            <p> <strong>format</strong> : String : 'json' is only currently supported<br />
-                <strong>pretty</strong> : Boolean : If true, the json will be human readable<br />
-            </p>
-            <p>For example: https://api.swu-db.com/catalog/artist-names <br />
-                Retrieves all artists</p>
-            <p></p>
-        </div>
-    </section>
+    
 
 
 
