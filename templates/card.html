@@ -120,10 +120,50 @@
             {% endif %}
 
             <div class="card-set">
-                <p>Set: <a href="/search?q=set%3A{{ card.set }}">{{ card.set }}</a> {{ card.number }}/252</p>
+                <div>
+                <p>Set: <a href="/search?q=set%3A{{ card.set }}">{{ card.set_name }}</a> {{ card.number }}/{{card.max_element}}</p>
+                </div>
+                <div class="card-rarity">
+                    <p>Rarity: {{ card.rarity }}</p>
+                    </div>
+                
             </div> 
         </div>
     </div>
+    {% if variants %}
+    <div class="variants-container">
+        
+        <h3 style="text-align: center;">Variants</h3>
+        <div class="card-grid-container">
+            <div class="card-grid">
+        {% for variant in variants %}
+        <div class="variant-container">
+        <h4 style="text-align: center;">{{ variant.variant_type }}</h4>
+        <div class="card-img variant-img">
+                {% if variant.has_back %}
+                <a href="{{ url_for('card', set=variant.set, number=variant.number, name=variant.name|replace(' ', '-')|replace('\"', '
+                    -')|replace('/', '-' )) }}">
+                    <img {% if variant.is_landscape %}src="{{ variant.v_front_art }}" {% else %}src="{{ variant.front_art }}" {%
+                        endif %} alt="Card Image" {% if variant.is_landscape %}data-front-image="{{ variant.v_front_art }}" {%
+                        else %}data-front-image="{{ variant.front_art }}" {% endif %} data-back-image="{{ variant.back_art }}"
+                        class="card-image toggleable">
+                </a>
+                <button class="toggle-button"></button>
+                {% else %}
+                <a href="{{ url_for('card', set=variant.set, number=variant.number, name=variant.name|replace(' ', '-')|replace('\"', '
+                    -')|replace('/', '-' )) }}">
+                    <img {% if variant.is_landscape %}src="{{ variant.v_front_art }}" {% else %}src="{{ variant.front_art }}" {%
+                        endif %} alt="Card Image" class="card-image">
+                </a>
+                {% endif %}
+           
+            </div>
+        </div>
+        {% endfor %}
+    </div></div>
+        
+    </div>
+    {% endif %}
     <div class="card-iterator-container">
         {% if prev_card.name %}
             <a href="/card/{{ prev_card.set }}/{{ prev_card.number }}/{{ prev_card.name|replace('/', '-')|urlencode }}" class="button prev-link">{{ prev_card.name }}</a>

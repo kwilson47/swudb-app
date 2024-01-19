@@ -24,7 +24,7 @@ else:
         '\xf0?a\x9a\\\xff\xd4;\x0c\xcbHi'
     )
     Bootstrap(app)
-    session = boto3.Session(profile_name='swu-admin')
+    session = boto3.Session(profile_name='swu-admin-test')
 
 aws_region = os.environ.get('AWS_REGION')
 dynamodb_table = os.environ.get('SWU_DB_TABLE')
@@ -66,6 +66,15 @@ def get_card(set_id, card_number):
     else:
         # Card not found
         return None
+
+def get_variants(variant_numbers):
+    variant_cards = []
+    for variant in variant_numbers:
+        set_id, card_id = variant.split('-')
+        card = get_card(set_id, card_id)
+        variant_cards.append(card)
+    return variant_cards
+
 
 def get_next_card(set_id, card_number):
 
@@ -343,7 +352,8 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
                 comparison_operator = '='
                 attribute_value = expression.split(':', 1)[1].strip().upper()
                 result_string += " the set is " + attribute_value
-                filter_expression += f"contains (#{attribute_name}, :{attribute_name})"
+                # filter_expression += f"contains (#{attribute_name}, :{attribute_name})"
+                filter_expression += f"#{attribute_name} = :{attribute_name}"
                 expression_values.update(construct_expression_value(
                     attribute_name, attribute_value, is_numeric=False))
                 expression_attribute_names.update(
@@ -443,6 +453,7 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
             TableName=dynamodb_table
         )
     elif not expression_attribute_names:
+        filter_expression += f" AND attribute_not_exists(isVariant) "
         response = dynamodb.scan(
             TableName=dynamodb_table,
             FilterExpression=filter_expression,
@@ -450,6 +461,17 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
         )
     else:
         # Execute the query and retrieve the matching items
+        # print(filter_expression)
+        attribute_name = 'isVariant'
+        attribute_value = 'false'
+        filter_expression += f" AND attribute_not_exists(#{attribute_name}) "
+        # expression_values.update({f':{attribute_name}': 'true'})
+        expression_attribute_names.update(
+            construct_expression_attribute_name(attribute_name))
+        # print(filter_expression)
+        # print(expression_values)
+        # print(expression_attribute_names)
+
         response = dynamodb.scan(
             TableName=dynamodb_table,
             FilterExpression=filter_expression,
@@ -581,30 +603,154 @@ def construct_expression_attribute_name(attribute_name):
 def process_response(response):
     # Process the DynamoDB response and extract the matching cards
     items = response['Items']
+    # print("Items:\n")
     # print(items)
-    cards = [process_item(item) for item in items]
+    set_info = dynamodb.scan(
+            TableName='Sets',
+        )
+    cards = [process_item(item, set_info['Items']) for item in items]
+    
+    # max_element = set_info['Items'][0]["maxElement"]['S']
+    # set_name = set_info['Items'][0]['fullName'][]
 
+    # print(set_info['Items'])
+    allVariants = []
+    # for item in items:
+    #     print("\nItem:\n")
+    #     print(item)
+    #     if 'variantCardNumbers' in item:
+    #         variants = item.get('variantCardNumbers', {}).get('SS', [])
+    #         for variant in variants:
+    #             response = dynamodb.query(
+    #                 TableName=dynamodb_table,
+    #                 KeyConditionExpression='setId = :set_id and cardNumber = :card_number',
+    #                 ExpressionAttributeValues={
+    #                     ':set_id': {'S': item['setId']['S']},
+    #                     ':card_number': {'S': variant}
+    #                 }
+    #             )
+    #         if 'Items' in response:
+    #             item2 = response['Items'][0]
+    #             new_card = process_item(item2)
+    #             cards.append(new_card)
+    # #         print(variants)
+    # #         allVariants.extend(variants)
+    # # print(allVariants)
+    
     return cards
 
 
-def process_item(item):
+def process_item(item, set_info = None):
     # Process a single item from the DynamoDB response and return a card object
     # Extract the necessary attributes from the item
-    card_set = item['setId']['S']
-    number = item['cardNumber']['S']
+    # print(item)  
+
+    
+    variants = item.get('variantCardNumbers', {}).get('SS', [])
+    # print("Variants")
+    # print(variants)
+    if 'isVariant' in item and item['isVariant']['BOOL']:
+        front_art = item['frontArt']['S']
+        number = item['cardNumber']['S']
+        original_number = item['originalCardNumber']['S']
+        card_set = item['setId']['S']
+        original_set = item.get('originalSet', {}).get('S', card_set)
+        back_art = item.get('backArt', {}).get('S', None)
+        artist = item.get('artist', {}).get('S', None)
+        if artist == None:
+            use_original_artist = True
+        else:
+            use_original_artist = False
+        v_front_art = item.get('verticalFrontArt', {}).get('S', None)
+        variant_type = item.get('variantType', {}).get('S', 'Original')
+        
+        # variants.remove(number)
+        
+        response = dynamodb.query(
+            TableName=dynamodb_table,
+            KeyConditionExpression='setId = :set_id and cardNumber = :card_number',
+            ExpressionAttributeValues={
+                ':set_id': {'S': original_set},
+                ':card_number': {'S': item['originalCardNumber']['S']}
+            }
+        )
+        item = response['Items'][0]
+        variants = item.get('variantCardNumbers', {}).get('SS', [])
+        variants.append(str(original_set + '-' + original_number))
+        variants.remove(str(card_set + '-' + number))
+        if use_original_artist:
+            artist = item.get('artist', {}).get('S', None)
+
+        
+
+        
+    else:
+        number = item['cardNumber']['S']
+        front_art = item['frontArt']['S']
+        back_art = item.get('backArt', {}).get('S', None)
+        artist = item.get('artist', {}).get('S', None)
+        v_front_art = item.get('verticalFrontArt', {}).get('S', None)
+        variant_type = item.get('variantType', {}).get('S', 'Original')
+        card_set = item['setId']['S']
+
+        # set_info = dynamodb.query(
+        #     TableName='Sets',
+        #     KeyConditionExpression='setId = :set_id',
+        #     ExpressionAttributeValues={
+        #         ':set_id': {'S': card_set}
+        #     }
+        # )
+        # max_element = set_info['Items'][0]["maxElement"]['S']
+        # set_name = set_info['Items'][0]['fullName'][]
+        
+    # print(item)   
+    # card_set = item['setId']['S']
+    
     type = item['type']['S']
-    front_art = item['frontArt']['S']
-    v_front_art = item.get('verticalFrontArt', {}).get('S', None)
+
+    if not set_info:
+        set_info = dynamodb.query(
+                TableName='Sets',
+                KeyConditionExpression='setId = :set_id',
+                ExpressionAttributeValues={
+                    ':set_id': {'S': card_set}
+                }
+            )
+        max_element = set_info['Items'][0]["maxElement"]['S']
+        set_name = set_info['Items'][0]['fullName']['S']
+    else:
+        matching_element = next((element for element in set_info if element['setId']['S'] == card_set), None)
+        max_element = matching_element['maxElement']['S']
+        set_name = matching_element['fullName']['S']
+    # max_element = "252"
+    # set_name = "hello"
+    
+    # v_front_art = item.get('verticalFrontArt', {}).get('S', None)
     rarity = item['rarity']['S']
+    if rarity == 'C':
+        rarity = "Common"
+    elif rarity == 'U':
+        rarity = "Uncommon"
+    elif rarity == 'R':
+        rarity = "Rare"
+    elif rarity == 'L':
+        rarity = "Legendary"
+    elif rarity == 'S':
+        rarity = "Starter"
+    
     has_back = item['hasBack']['BOOL']
-    power = item.get('power', {}).get('N', None)
+    power = item.get('printedPower', {}).get('S', None)
+    if power == None:
+        power = item.get('power', {}).get('N', None)
     subtitle = item.get('subtitle', {}).get('S', None)
     text = item.get('textStyled', {}).get('S', None)
     cost = item.get('cost', {}).get('N', None)
-    hp = item.get('HP', {}).get('N', None)
+    hp = item.get('printedHP', {}).get('S', None)
+    if hp == None:
+        hp = item.get('HP', {}).get('N', None)
     name = item['name']['S']
-    back_art = item.get('backArt', {}).get('S', None)
-    artist = item.get('artist', {}).get('S', None)
+    # back_art = item.get('backArt', {}).get('S', None)
+    # artist = item.get('artist', {}).get('S', None)
     is_landscape = item.get('isLandscape', {}).get('BOOL', False)
     aspect_icons = []
     aspects_response = item.get('aspects', {}).get('L', [])
@@ -616,6 +762,7 @@ def process_item(item):
     traits_response = item.get('traits', {}).get('L', [])
     traits = [traits['S'] for traits in traits_response]
     arenas = item.get('arenas', {}).get('SS', [])
+    
 
     for aspect in aspects:
         aspect = aspect.lower()
@@ -650,7 +797,11 @@ def process_item(item):
         'epic_action': epic_action,
         'back_text': back_text,
         'aspects': aspects,
-        'is_unique': is_unique
+        'is_unique': is_unique,
+        'variants': variants,
+        'variant_type': variant_type,
+        'max_element': max_element,
+        'set_name': set_name
     }
 
     return card
@@ -682,9 +833,11 @@ def card(set, number, name):
     # Retrieve card information based on the set, number, and name
     # Render the card page template with the retrieved card information
     my_card = get_card(set, number)
+    # print(my_card)
     next_card = get_next_card(set, number)
     prev_card = get_previous_card(set, number)
-    return render_template('card.html', set=set, number=number, name=name, card=my_card, next_card=next_card, prev_card=prev_card)
+    variants = get_variants(my_card["variants"])
+    return render_template('card.html', set=set, number=number, name=name, card=my_card, next_card=next_card, prev_card=prev_card, variants=variants)
 
 @app.route('/submit-feedback', methods=['POST'])
 def submit_feedback():
@@ -781,7 +934,7 @@ def advanced_results():
 
     traits_list = []
     types_list = []
-    print(traits_list)
+    # print(traits_list)
 
     for string in traits:
         if string.isupper():

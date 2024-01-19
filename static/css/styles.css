@@ -181,6 +181,14 @@ p {
     object-fit: contain;
 }
 
+.variant-img {
+    display: flex;
+}
+
+.variants-container {
+    margin-top: 50px;
+}
+
 .toggle-button {
     position: absolute;
     top: 50%;
@@ -267,7 +275,14 @@ p {
 }
 
 .card-set {
+    display: flex;
     padding-left: 5px;
+    justify-content: space-between;
+}
+
+.card-rarity {
+    text-align: right;
+    padding-right: 5px;
 }
 
 .card-epic-action {
