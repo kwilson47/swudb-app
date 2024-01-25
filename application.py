@@ -449,8 +449,10 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
     filter_expression = ' OR '.join(filter_expression_groups)
 
     if not expression_values:
+        filter_expression += f"attribute_not_exists(isVariant) "
         response = dynamodb.scan(
-            TableName=dynamodb_table
+            TableName=dynamodb_table,
+            FilterExpression=filter_expression
         )
     elif not expression_attribute_names:
         filter_expression += f" AND attribute_not_exists(isVariant) "
