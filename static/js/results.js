@@ -298,8 +298,9 @@
   
   
             // Convert numeric attributes to numbers for numerical comparison
-            const numA = !isNaN(aProperty) ? parseFloat(aProperty) : (aProperty === "+1" ? parseFloat(aProperty) : 0);
-            const numB = !isNaN(bProperty) ? parseFloat(bProperty) : (bProperty === "+1" ? parseFloat(bProperty) : 0);
+            const numA = !isNaN(aProperty) ? parseFloat(aProperty) : aProperty;
+            const numB = !isNaN(bProperty) ? parseFloat(bProperty) : bProperty;
+            
             if (numA < numB) return -sortOrder;
             if (numA > numB) return sortOrder;
             return 0;

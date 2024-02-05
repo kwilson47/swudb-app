@@ -817,6 +817,7 @@ def homepage():
 @app.route('/search', methods=['GET', 'POST'])
 def search():
     search_input = request.args.get('q')
+    search_input = search_input.replace('“', '"').replace('”', '"')
     sort_field = request.args.get('sort')
     sort_order = request.args.get('sortOrder')
     display_mode = request.args.get('display_mode')
