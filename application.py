@@ -24,10 +24,12 @@ else:
         '\xf0?a\x9a\\\xff\xd4;\x0c\xcbHi'
     )
     Bootstrap(app)
-    session = boto3.Session(profile_name='swu-admin-test')
+    session = boto3.Session(profile_name='swu-admin')
 
-aws_region = os.environ.get('AWS_REGION')
-dynamodb_table = os.environ.get('SWU_DB_TABLE')
+# aws_region = os.environ.get('AWS_REGION')
+aws_region = 'us-east-1'
+# dynamodb_table = os.environ.get('SWU_DB_TABLE')
+dynamodb_table = 'Cards2'
 dynamodb = session.client('dynamodb',
                         region_name=aws_region)
 
@@ -49,6 +51,9 @@ def get_card(set_id, card_number):
     """
     Given a set id and card number, return the matching card
     """
+    print(dynamodb_table)
+    print(aws_region)
+    
     response = dynamodb.query(
         TableName=dynamodb_table,
         KeyConditionExpression='setId = :set_id and cardNumber = :card_number',
@@ -123,7 +128,7 @@ def get_previous_card(set_id, card_number):
 
 
 
-def search_cards(search_input, sort_field='name', sort_order='asc', leader='', base=''):
+def search_cards(search_input, sort_field='name', sort_order='asc', leader='', base='', include_variants=False):
     """
     Search the Cards table using the input provided by the user
     Return any matching cards, in the manner specified by sort_field and sort_order
@@ -449,13 +454,15 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
     filter_expression = ' OR '.join(filter_expression_groups)
 
     if not expression_values:
-        filter_expression += f"attribute_not_exists(isVariant) "
+        if not include_variants:
+            filter_expression += f"attribute_not_exists(isVariant) "
         response = dynamodb.scan(
             TableName=dynamodb_table,
             FilterExpression=filter_expression
         )
     elif not expression_attribute_names:
-        filter_expression += f" AND attribute_not_exists(isVariant) "
+        if not include_variants:
+            filter_expression += f" AND attribute_not_exists(isVariant) "
         response = dynamodb.scan(
             TableName=dynamodb_table,
             FilterExpression=filter_expression,
@@ -464,9 +471,8 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
     else:
         # Execute the query and retrieve the matching items
         # print(filter_expression)
-        attribute_name = 'isVariant'
-        attribute_value = 'false'
-        filter_expression += f" AND attribute_not_exists(#{attribute_name}) "
+        if not include_variants:
+            filter_expression += f" AND attribute_not_exists(isVariant) "
         # expression_values.update({f':{attribute_name}': 'true'})
         expression_attribute_names.update(
             construct_expression_attribute_name(attribute_name))
@@ -605,6 +611,7 @@ def construct_expression_attribute_name(attribute_name):
 def process_response(response):
     # Process the DynamoDB response and extract the matching cards
     items = response['Items']
+    print(len(items))
     # print("Items:\n")
     # print(items)
     set_info = dynamodb.scan(
@@ -652,6 +659,8 @@ def process_item(item, set_info = None):
     # print("Variants")
     # print(variants)
     if 'isVariant' in item and item['isVariant']['BOOL']:
+        display_price = None
+        mid_price = None
         front_art = item['frontArt']['S']
         number = item['cardNumber']['S']
         original_number = item['originalCardNumber']['S']
@@ -667,6 +676,45 @@ def process_item(item, set_info = None):
         variant_type = item.get('variantType', {}).get('S', 'Original')
         
         # variants.remove(number)
+
+        tcg_product_id = item.get('tcgplayerId', {}).get('S', None)
+        # print(tcg_product_id)
+        if tcg_product_id:
+            if variant_type == 'Showcase':
+                subtype = 'Foil'
+            else:
+                subtype = 'Normal'
+            response2 = dynamodb.query(
+                TableName='Prices',
+                KeyConditionExpression='productId = :product_id and subTypeName = :subtype_name',
+                ExpressionAttributeValues={
+                    ':product_id': {'S': tcg_product_id},
+                    ':subtype_name': {'S': subtype}
+                }
+            )
+            if 'Items' in response2 and len(response2['Items']) > 0:
+                item2 = response2['Items'][0]
+                # print("Price items:")
+                # print(item2)
+                market_price = item2.get('marketPrice', {}).get('N', None)
+                mid_price = item2.get('midPrice', {}).get('N', None)
+                url = item2.get('url', {}).get('S', None)
+                if not market_price:
+                    display_price = mid_price
+                else:
+                    display_price = market_price
+                # print("display price:")
+                # print(display_price)
+            else:
+                market_price = None
+                mid_price = None
+                url = None
+                display_price = None
+        else:
+            market_price = None
+            display_price = None
+            mid_price = None
+            url = None
         
         response = dynamodb.query(
             TableName=dynamodb_table,
@@ -694,6 +742,39 @@ def process_item(item, set_info = None):
         v_front_art = item.get('verticalFrontArt', {}).get('S', None)
         variant_type = item.get('variantType', {}).get('S', 'Original')
         card_set = item['setId']['S']
+
+        tcg_product_id = item.get('tcgplayerId', {}).get('S', None)
+        # print(tcg_product_id)
+        if tcg_product_id:
+            response2 = dynamodb.query(
+                TableName='Prices',
+                KeyConditionExpression='productId = :product_id and subTypeName = :subtype_name',
+                ExpressionAttributeValues={
+                    ':product_id': {'S': tcg_product_id},
+                    ':subtype_name': {'S': 'Normal'}
+                }
+            )
+            if 'Items' in response2 and len(response2['Items']) > 0:
+                item2 = response2['Items'][0]
+                market_price = item2.get('marketPrice', {}).get('N', None)
+                mid_price = item2.get('midPrice', {}).get('N', None)
+                url = item2.get('url', {}).get('S', None)
+                if not market_price:
+                    display_price = mid_price
+                else:
+                    display_price = market_price
+            else:
+                market_price = None
+                mid_price = None
+                url = None
+                display_price = None
+            # print("display price:")
+            # print(display_price)
+        else:
+            market_price = None
+            display_price = None
+            mid_price = None
+            url = None
 
         # set_info = dynamodb.query(
         #     TableName='Sets',
@@ -738,7 +819,8 @@ def process_item(item, set_info = None):
     elif rarity == 'L':
         rarity = "Legendary"
     elif rarity == 'S':
-        rarity = "Starter"
+        rarity = "Special"
+    
     
     has_back = item['hasBack']['BOOL']
     power = item.get('printedPower', {}).get('S', None)
@@ -803,7 +885,11 @@ def process_item(item, set_info = None):
         'variants': variants,
         'variant_type': variant_type,
         'max_element': max_element,
-        'set_name': set_name
+        'set_name': set_name,
+        'market_price': market_price,
+        'display_price': display_price,
+        'mid_price': mid_price,
+        'url': url
     }
 
     return card
@@ -823,7 +909,9 @@ def search():
     display_mode = request.args.get('display_mode')
     leader = request.args.get('leader')
     base = request.args.get('base')
-    cards, result_string, leader, base = search_cards(search_input, sort_field, sort_order, leader, base)
+    # variants = request.args.get('variants')
+    # print("variants: " + variants)
+    cards, result_string, leader, base = search_cards(search_input, sort_field, sort_order, leader, base, False)
     for card in cards:
         card.pop('back_text', None)
     # cards_json = json.dumps(cards, ensure_ascii=False, default=lambda x: None)

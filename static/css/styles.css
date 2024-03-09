@@ -181,6 +181,11 @@ p {
     object-fit: contain;
 }
 
+.display-price {
+    text-align: center;
+    padding-top: 10px;
+}
+
 .variant-img {
     display: flex;
 }
