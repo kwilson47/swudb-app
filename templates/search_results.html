@@ -28,6 +28,7 @@
                 <option value="10" {% if sort_field=='rarity' %}selected{% endif %}>Rarity</option>
                 <option value="1" {% if sort_field=='setnumber' %}selected{% endif %}>Set/Number</option>
                 <option value="11" {% if sort_field=='artist' %}selected{% endif %}>Artist</option>
+                <option value="13" {% if sort_field=='price' %}selected{% endif %}>Price</option>
                 {% if leader.name %}
                 <option value="12" {% if sort_field=='penalty' %}selected{% endif %}>Penalty</option>
                 {% endif %}
@@ -86,6 +87,7 @@
                     <th class="table-cell sortable" data-column="9">Traits</th>
                     <th class="table-cell sortable" data-column="10">Rarity</th>
                     <th class="table-cell sortable" data-column="11">Artist</th>
+                    <th class="table-cell sortable" data-column="13">Price</th>
                     {% if leader.name %}
                     <th class="table-cell sortable" data-column="12">Penalty</th>
                     {% endif %}
@@ -121,6 +123,7 @@
                     <td class="table-cell">{{ ' • '.join(card.traits) }}</td>
                     <td class="table-cell">{{ card.rarity }}</td>
                     <td class="table-cell">{{ card.artist }}</td>
+                    <td class="table-cell">${{ '%.2f'|format(card.display_price) }}</td>
                     {% if leader.name %}
                     <td class="table-cell">{{ card.penalty }}</td>
                     {% endif %}
@@ -148,6 +151,7 @@
             data-rarity="{{ card.rarity }}" 
             data-artist="{{ card.artist }}"
             data-penalty="{{ card.penalty }}"
+            data-price="{{ card.display_price }}"
             data-arena="{{ card.arenas|join('|')|default('') }}"
             data-traits="{{ card.traits|join('|')|default('') }}"
             data-aspects="{{ card.aspects|join('|')|default('') }}">

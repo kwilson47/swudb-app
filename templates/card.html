@@ -15,7 +15,7 @@
             <img src="{{ card.front_art }}" alt="Card Image">
             {% endif %}
             {% if card.display_price %}
-                <div class="display-price"><a href="{{card.url}}" target="_blank">Buy on TCGplayer ${{card.display_price}}</a></div>
+                <div class="display-price"><a href="{{card.url}}" target="_blank">Buy on TCGplayer ${{ '%.2f'|format(card.display_price) }}</a></div>
             {% endif %}
             
         </div>
@@ -163,7 +163,7 @@
            
             </div>
             {% if variant.display_price %}
-                <div class="display-price"><a href="{{variant.url}}" target="_blank">Buy on TCGplayer ${{variant.display_price}}</a></div>
+                <div class="display-price"><a href="{{variant.url}}" target="_blank">Buy on TCGplayer ${{ '%.2f'|format(variant.display_price) }}</a></div>
             {% endif %}
         </div>
         {% endfor %}
@@ -175,7 +175,7 @@
         {% if prev_card.name %}
             <a href="/card/{{ prev_card.set }}/{{ prev_card.number }}/{{ prev_card.name|replace('/', '-')|urlencode }}" class="button prev-link">{{ prev_card.name }}</a>
         {% endif %}
-        <a href="/search?q=set%3A{{ card.set }}" class="button center-link">{{ card.set }}</a>
+        <a href="/search?q=set%3A{{ card.set }}&variants=true" class="button center-link">{{ card.set }}</a>
         {% if next_card.name %}
             <a href="/card/{{ next_card.set }}/{{ next_card.number }}/{{ next_card.name|replace('/', '-')|urlencode }}" class="button next-link">{{ next_card.name }}</a>
         {% endif %}

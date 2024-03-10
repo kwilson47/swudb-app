@@ -288,6 +288,9 @@
           case "12":
             sortFieldName = 'penalty';
             break;
+          case "13":
+            sortFieldName = 'price';
+            break;
         }
         cards.sort((a, b) => {
             const aProperty = a.dataset[sortFieldName];
