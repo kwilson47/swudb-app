@@ -471,10 +471,15 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
         if not include_variants:
             filter_expression += f" AND attribute_not_exists(isVariant) "
         # expression_values.update({f':{attribute_name}': 'true'})
-        expression_attribute_names.update(
-            construct_expression_attribute_name(attribute_name))
+        # print("attribute names")
+        # print(attribute_name)
+        # # expression_attribute_names.update(
+        # #     construct_expression_attribute_name(attribute_name))
+        # print("filter expression: ")
         # print(filter_expression)
+        # print("expression values: ")
         # print(expression_values)
+        # print("expression attribute names: ")
         # print(expression_attribute_names)
 
         response = dynamodb.scan(
