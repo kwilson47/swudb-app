@@ -45,6 +45,11 @@
     justify-content: center;
 }
 
+/* .card-image-controls-item {
+    border-bottom: 2px solid #ccc; /* Add bottom border to the button container */
+    /* padding-bottom: 10px;  */
+/* }  */
+
 .card-grid-container {
     justify-content: center;
 }
@@ -173,6 +178,7 @@ p {
     align-items: center;
     position: relative;
     display: inline-block;
+    /* padding-top: 35px; */
 }
 
 .card-img img {
@@ -378,7 +384,7 @@ p {
 
     .card-image {
         margin-right: 0; /* Remove margin for better spacing on smaller screens */
-        margin-bottom: 15px;
+        margin-bottom: 60px;
     }
 
     .prev-link {
@@ -952,7 +958,7 @@ code {
 
   .my-modal {
     display: none; /* Hidden by default */
-    position: absolute; /* Stay in place */
+    position: fixed; /* Stay in place */
     z-index: 900; /* Sit on top */
     left: 50%;
     top: 50%;
@@ -964,6 +970,9 @@ code {
     overflow: auto; /* Enable scroll if needed */
     background-color: rgb(0,0,0); /* Fallback color */
     background-color: rgba(0,0,0,0.4); /*Black w/ opacity */
+    border: 1px solid #ccc; /* Border */
+    border-radius: 5px; /* Border radius */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Box shadow */
   }
   
   .my-modal-header {
