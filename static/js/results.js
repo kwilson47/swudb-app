@@ -39,13 +39,59 @@
 //     });
 //   });
   
+function buildUpdatedVariantsURL(variantField, selectedDisplayMode) {
+  const currentURL = new URL(window.location.href);
+  let updatedURL;
+  let queryParams = new URLSearchParams(currentURL.search);
+
+  // Modify the 'q' parameter to append 'variant' parameter
+  let qParam = queryParams.get('q');
+  if (qParam) {
+    // Check if 'variant' already exists within 'q' parameter
+    const variantRegex = /variant:[^&+]+/g;
+    if (variantRegex.test(qParam)) {
+      // Replace existing 'variant' part with new value
+      qParam = qParam.replace(variantRegex, `variant:${variantField}`);
+    } else {
+      // Append 'variant' part to existing 'q' parameter
+      qParam += `+and+variant:${variantField}`;
+    }
+  } else {
+    // Set 'q' parameter with 'variant' part
+    qParam = `variant:${variantField}`;
+  }
+
+  queryParams.set('q', qParam);
+  currentURL.search = decodeURIComponent(queryParams.toString());
+
+  return currentURL.toString();
+}
   
   
   
   var displayModeSelect = document.getElementById('view-mode-select');
+  var variantModeSelect = document.getElementById('view-variants-select');
   // var cardTable = document.getElementById('cardTable');
   // var cardTable = document.getElementById('cardTable_wrapper');
   var cardGrid = document.getElementById('card-grid-container');
+
+  variantModeSelect.addEventListener('change', function() {
+    // Get the selected option value
+    var selectedOption = variantModeSelect.options[variantModeSelect.selectedIndex];
+    var selectedVariant = selectedOption.value;
+
+    if (selectedVariant == 'hyperspace') {
+      selectedVariant = 'h'
+    } else if (selectedVariant == 'showcase') {
+      selectedVariant = 's'
+    }
+  
+    // Build the updated URL
+    var updatedURL = buildUpdatedVariantsURL(selectedVariant);
+  
+    // Redirect to the updated URL
+    window.location.href = updatedURL;
+  });
   
   function updateDisplay() {
     var cardTable = document.getElementById('cardTable_wrapper');

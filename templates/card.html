@@ -15,8 +15,55 @@
             <img src="{{ card.front_art }}" alt="Card Image">
             {% endif %}
             {% if card.display_price %}
-                <div class="display-price"><a href="{{card.url}}" target="_blank">Buy on TCGplayer ${{ '%.2f'|format(card.display_price) }}</a></div>
-            {% endif %}
+                <!--<div class="display-price"><a href="{{card.url}}" target="_blank">Buy on TCGplayer ${{ '%.2f'|format(card.display_price) }}</a></div>
+                -->    
+                <div class="card-image-controls">
+                    <div class="card-image-controls-item"> 
+                        <button id="myBtn" class="button-small card-image-controls-item-price myBtn" data-tcg-product-id="{{ card.tcg_product_id }}">${{ '%.2f'|format(card.display_price) }}</button>
+                    </div>
+                </div>
+                <!-- The Modal -->
+                <div id="myModal" class="my-modal">
+                    <div class="my-modal-header">
+                        <div class="my-modal-title">
+                            Prices of 
+                            <em>{{card.name}} ({{card.set_name}} {{card.number}})</em>
+                        </div>
+                    </div>
+
+                    <!-- Modal content -->
+                    <div class="my-modal-body">
+                        <div id="card-price-details-modal-entries">
+                            <div class="card-price-details-modal-entry">
+                                <div class="card-price-details-modal-entry-card-variant-type-name-container">
+                                    "Normal"
+                                </div>
+                                <div class="card-price-details-modal-entry-prices">
+                                    <div class="card-price-details-modal-entry-price">
+                                        <span class="card-price-details-modal-entry-price-label"> Market </span>
+                                        <span class="card-price-details-modal-entry-price-value"> $117 </span>
+                                    </div>
+                                </div>
+                                <a href="{{card.url}}" rel="external nofollow" target="_blank" class="card-price-details-modal-entry-vendor-button button button-plain button-small">
+                                    <span aria-hidden="true" class="button-icon fa-solid fa-up-right-from-square"></span>
+                                    View on TCGplayer
+                                </a>
+                            </div>
+                       
+                        </div>
+                        
+                    </div>
+
+                    <div class="my-modal-footer">
+                    
+                        <div class="modal-footer-buttons">
+                            <button type="button" class="button button-primary close-modal" data-hide="modal">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             
         </div>
         <div class="card-info">
@@ -163,7 +210,12 @@
            
             </div>
             {% if variant.display_price %}
-                <div class="display-price"><a href="{{variant.url}}" target="_blank">Buy on TCGplayer ${{ '%.2f'|format(variant.display_price) }}</a></div>
+                <div class="card-image-controls">
+                    <div class="card-image-controls-item"> 
+                        <button class="button-small card-image-controls-item-price open-modal myBtn" data-tcg-product-id="{{ variant.tcg_product_id }}" data-modal-id="myModal{{ loop.index }}">${{ '%.2f'|format(variant.display_price) }}</button>
+                    </div>
+                </div>
+                
             {% endif %}
         </div>
         {% endfor %}

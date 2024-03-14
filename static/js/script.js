@@ -67,3 +67,91 @@ toggleButtons.forEach(button => {
     }
   });
 });
+
+// Get the modal
+var modal = document.getElementById("myModal");
+
+// Get the <span> element that closes the modal
+var span = document.getElementsByClassName("close-modal")[0];
+
+// When the user clicks on <span> (x), close the modal
+span.onclick = function() {
+  modal.style.display = "none";
+}
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+  if (event.target == modal) {
+    modal.style.display = "none";
+  }
+}
+
+// Get all buttons that open modals
+var buttons = document.getElementsByClassName("myBtn");
+
+// Function to handle button click event
+for (var i = 0; i < buttons.length; i++) {
+  buttons[i].onclick = function() {
+      modal.style.display = "block";
+      var tcgProductId = this.getAttribute('data-tcg-product-id');
+
+      // Make AJAX request to Flask backend
+      $.ajax({
+          type: 'GET',
+          url: '/get_prices',
+          data: {
+              tcg_product_id: tcgProductId
+          },
+          success: function (response) {
+              // Populate modal with data received from backend
+              populateModal(response);
+          },
+          error: function (xhr, status, error) {
+              console.error('Error:', error);
+          }
+      });
+  };
+}
+
+// Function to populate modal with data
+function populateModal(data) {
+  // Clear previous data
+  $('#card-price-details-modal-entries').empty();
+
+  // Iterate through each entry in data and populate modal
+  data.forEach(function (entry) {
+      var modalEntry = $('<div class="card-price-details-modal-entry"></div>');
+      var variantTypeName = $('<div class="card-price-details-modal-entry-card-variant-type-name-container">' + entry.subTypeName + '</div>');
+      var pricesContainer = $('<div class="card-price-details-modal-entry-prices"></div>');
+
+      // Populate prices
+      var priceLabels = ['market', 'low', 'mid', 'high'];
+      priceLabels.forEach(function (label) {
+          var priceEntry = $('<div class="card-price-details-modal-entry-price"></div>');
+          priceEntry.append('<span class="card-price-details-modal-entry-price-label">' + label + '</span>');
+          
+          console.log(entry[label]);
+          // Format price with 2 decimal places
+          if (entry[label] === '' || isNaN(entry[label])) {
+            formattedPrice = 'None';
+          } else {
+              // Format price with 2 decimal places
+              formattedPrice = '$' + parseFloat(entry[label]).toFixed(2);
+          }
+          console.log(formattedPrice);
+          priceEntry.append('<span class="card-price-details-modal-entry-price-value">' + formattedPrice + '</span>');
+          pricesContainer.append(priceEntry);
+      });
+
+      modalEntry.append(variantTypeName);
+      modalEntry.append(pricesContainer);
+
+      // Append the link
+      var link = $('<a href="' + entry['url'] +'" rel="external nofollow" target="_blank" class="card-price-details-modal-entry-vendor-button button button-plain button-small"></a>');
+      link.append('<span aria-hidden="true" class="button-icon fa-solid fa-up-right-from-square"></span>');
+      link.append('View on TCGplayer');
+      modalEntry.append(link);
+
+      $('#card-price-details-modal-entries').append(modalEntry);
+  });
+}

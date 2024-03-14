@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from markupsafe import Markup
 from collections import Counter
 from flask_bootstrap import Bootstrap
@@ -134,6 +134,9 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
     current_expression = ""
     quote_stack = []
 
+    variant = ''
+    include_all = False
+
     result_string = ""
 
     for char in search_input:
@@ -178,13 +181,13 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
         combined_expressions.append(temp_expression.strip('"').strip("'"))
 
     # Use the combined expressions for further processing
-    print(combined_expressions)
+    # print(combined_expressions)
 
     # Construct the filter expressions for DynamoDB
     filter_expressions = []
     expression_values = {}
     expression_attribute_names = {}
-    print(expressions)
+    # print(expressions)
     filter_expression_groups = []
     current_group = []
 
@@ -289,9 +292,9 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
 
             # Combine all filter conditions with 'AND'
             filter_expression += ' AND '.join(filter_expression_parts)
-            print(filter_expression)
-            print(expression_attribute_values)
-            print(expression_attribute_names)
+            # print(filter_expression)
+            # print(expression_attribute_values)
+            # print(expression_attribute_names)
 
             expression_values.update(expression_attribute_values)
             
@@ -328,6 +331,7 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
             card_set = re.search(r'\b(?:s|set):(.+)', expression)
             artist = re.search(r'\b(?:art|artist):(.+)', expression)
             name = re.search(r'(?:name|title):(.+)', expression)
+            variant = re.search(r'(?:variant|v):(.+)', expression)
 
             if match:
                 attribute_name = 'searchText'
@@ -412,6 +416,28 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
                     attribute_placeholder, attribute_value, is_numeric=False))
                 expression_attribute_names.update(
                     construct_expression_attribute_name(attribute_name))
+            elif variant:
+                attribute_name = 'variantType'
+                attribute_value = expression.split(':', 1)[1].strip().upper()
+                result_string += " the variant includes " + attribute_value
+                if attribute_value == 'H':
+                    attribute_value = "Hyperspace"
+                elif attribute_value == 'S':
+                    attribute_value = "Showcase"
+                elif attribute_value == "A" or attribute_value == "ALL":
+                    include_all = True
+                    continue
+
+                if include_all == False:
+                    attribute_placeholder = attribute_name + '_' + attribute_value
+                    attribute_placeholder = re.sub(r'[ "\']', '_', attribute_placeholder)
+                    comparison_operator = 'contains'
+                    filter_expression += f"contains (#{attribute_name}, :{attribute_placeholder})"
+                    
+                    expression_values.update(construct_expression_value(
+                        attribute_placeholder, attribute_value, is_numeric=False))
+                    expression_attribute_names.update(
+                        construct_expression_attribute_name(attribute_name))
             elif name:
                 attribute_name = 'searchName'
                 comparison_operator = 'contains'
@@ -449,16 +475,20 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
         filter_expression_groups.append(' AND '.join(current_group))
 
     filter_expression = ' OR '.join(filter_expression_groups)
-
     if not expression_values:
-        if not include_variants:
+        if not include_variants and not variant and include_all == False:
             filter_expression += f"attribute_not_exists(isVariant) "
-        response = dynamodb.scan(
-            TableName=dynamodb_table,
-            FilterExpression=filter_expression
-        )
+        if not filter_expression:
+            response = dynamodb.scan(
+                TableName=dynamodb_table
+            )
+        else:
+            response = dynamodb.scan(
+                TableName=dynamodb_table,
+                FilterExpression=filter_expression
+            )
     elif not expression_attribute_names:
-        if not include_variants:
+        if not include_variants and not variant and include_all == False:
             filter_expression += f" AND attribute_not_exists(isVariant) "
         response = dynamodb.scan(
             TableName=dynamodb_table,
@@ -468,7 +498,7 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
     else:
         # Execute the query and retrieve the matching items
         # print(filter_expression)
-        if not include_variants:
+        if not include_variants and not variant and include_all == False:
             filter_expression += f" AND attribute_not_exists(isVariant) "
         # expression_values.update({f':{attribute_name}': 'true'})
         # print("attribute names")
@@ -541,8 +571,8 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
         sorted_cards = sorted(cards, key=lambda x: x.get(
             'name', 0), reverse=reverse_order)
     elif (sort_field in ['power', 'cost', 'hp']):
-        for card in cards:
-            print(card['hp'])
+        # for card in cards:
+        #     print(card['hp'])
         sorted_cards = sorted(cards, key=lambda x: int(
             x.get(sort_field, 0) or 0), reverse=reverse_order)
     elif (sort_field == 'setnumber'):
@@ -937,7 +967,8 @@ def process_item(item, set_info = None):
         # 'market_price': market_price,
         'display_price': float(display_price),
         # 'mid_price': mid_price,
-        'url': url
+        'url': url,
+        'tcg_product_id': tcg_product_id
     }
 
     return card
@@ -1157,6 +1188,34 @@ def replace_aspects(text):
 
     return Markup(text)
 
+@app.route('/get_prices', methods=['GET'])
+def get_prices():
+    # Get tcg_product_id from request
+    tcg_product_id = request.args.get('tcg_product_id')
+
+    # Query DynamoDB for prices
+    response = dynamodb.query(
+        TableName='Prices',
+        KeyConditionExpression='productId = :pid',
+        ExpressionAttributeValues={
+            ':pid': {'S': tcg_product_id}
+        }
+    )
+
+    # Extract relevant data from DynamoDB response
+    prices = []
+    for item in response['Items']:
+        price_entry = {
+            'subTypeName': item.get('subTypeName', {}).get('S', ''),
+            'market': item.get('marketPrice', {}).get('N', ''),
+            'low': item.get('lowPrice', {}).get('N', ''),
+            'mid': item.get('midPrice', {}).get('N', ''),
+            'high': item.get('highPrice', {}).get('N', ''),
+            'url': item.get('url', {}).get('S', '')
+        }
+        prices.append(price_entry)
+
+    return jsonify(prices)
 
 if __name__ == '__main__':
     app.run(debug=False)
