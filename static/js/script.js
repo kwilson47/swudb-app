@@ -94,6 +94,10 @@ for (var i = 0; i < buttons.length; i++) {
   buttons[i].onclick = function() {
       modal.style.display = "block";
       var tcgProductId = this.getAttribute('data-tcg-product-id');
+      var cardSetName = this.getAttribute('data-card-set');
+      var cardName = this.getAttribute('data-card-name');
+      var cardNumber = this.getAttribute('data-card-number');
+
 
       // Make AJAX request to Flask backend
       $.ajax({
@@ -104,7 +108,7 @@ for (var i = 0; i < buttons.length; i++) {
           },
           success: function (response) {
               // Populate modal with data received from backend
-              populateModal(response);
+              populateModal(response, cardSetName, cardNumber, cardName);
           },
           error: function (xhr, status, error) {
               console.error('Error:', error);
@@ -114,7 +118,7 @@ for (var i = 0; i < buttons.length; i++) {
 }
 
 // Function to populate modal with data
-function populateModal(data) {
+function populateModal(data, cardSetName, cardNumber, cardName) {
   // Clear previous data
   $('#card-price-details-modal-entries').empty();
 
@@ -154,4 +158,8 @@ function populateModal(data) {
 
       $('#card-price-details-modal-entries').append(modalEntry);
   });
+
+  // Populate modal title
+  var modalTitle = 'Prices of <em>' + cardName + ' (' + cardSetName + ' ' + cardNumber + ')</em>';
+  $('.my-modal-title').html(modalTitle);
 }

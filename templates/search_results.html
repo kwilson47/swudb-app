@@ -146,6 +146,7 @@
     <div class="card-grid-container" id="card-grid-container">
         <div class="card-grid">
             {% for card in cards %}
+            <div>
             <div class="card-img" 
             data-set="{{ card.set }}" 
             data-number="{{ card.number }}" 
@@ -177,9 +178,56 @@
                         endif %} alt="Card Image" class="card-image">
                 </a>
                 {% endif %}
-
             </div>
+            
+            <div class="card-image-controls">
+                <div class="card-image-controls-item"> 
+                    <button id="myBtn" class="button-small card-image-controls-item-price myBtn" data-card-set="{{ card.set_name }}" data-card-number="{{ card.number }}" data-card-name="{{ card.name }}" data-tcg-product-id="{{ card.tcg_product_id }}">${{ '%.2f'|format(card.display_price) }}</button>
+                </div>
+            </div>
+        </div>
+
             {% endfor %}
+        </div>
+        <!-- The Modal -->
+        <div id="myModal" class="my-modal">
+            <div class="my-modal-header">
+                <div class="my-modal-title">
+                    
+                </div>
+            </div>
+
+            <!-- Modal content -->
+            <div class="my-modal-body">
+                <div id="card-price-details-modal-entries">
+                    <div class="card-price-details-modal-entry">
+                        <div class="card-price-details-modal-entry-card-variant-type-name-container">
+                            "Normal"
+                        </div>
+                        <div class="card-price-details-modal-entry-prices">
+                            <div class="card-price-details-modal-entry-price">
+                                <span class="card-price-details-modal-entry-price-label"> Market </span>
+                                <span class="card-price-details-modal-entry-price-value"> $117 </span>
+                            </div>
+                        </div>
+                        <a href="" rel="external nofollow" target="_blank" class="card-price-details-modal-entry-vendor-button button button-plain button-small">
+                            <span aria-hidden="true" class="button-icon fa-solid fa-up-right-from-square"></span>
+                            View on TCGplayer
+                        </a>
+                    </div>
+               
+                </div>
+                
+            </div>
+
+            <div class="my-modal-footer">
+            
+                <div class="modal-footer-buttons">
+                    <button type="button" class="button button-primary close-modal" data-hide="modal">
+                        Close
+                    </button>
+                </div>
+            </div>
         </div>
 
     </div>

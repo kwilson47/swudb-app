@@ -19,15 +19,14 @@
                 -->    
                 <div class="card-image-controls">
                     <div class="card-image-controls-item"> 
-                        <button id="myBtn" class="button-small card-image-controls-item-price myBtn" data-tcg-product-id="{{ card.tcg_product_id }}">${{ '%.2f'|format(card.display_price) }}</button>
+                        <button id="myBtn" class="button-small card-image-controls-item-price myBtn" data-card-set="{{ card.set_name }}" data-card-number="{{ card.number }}" data-card-name="{{ card.name }}" data-tcg-product-id="{{ card.tcg_product_id }}">${{ '%.2f'|format(card.display_price) }}</button>
                     </div>
                 </div>
                 <!-- The Modal -->
                 <div id="myModal" class="my-modal">
                     <div class="my-modal-header">
                         <div class="my-modal-title">
-                            Prices of 
-                            <em>{{card.name}} ({{card.set_name}} {{card.number}})</em>
+
                         </div>
                     </div>
 
@@ -212,7 +211,7 @@
             {% if variant.display_price %}
                 <div class="card-image-controls">
                     <div class="card-image-controls-item"> 
-                        <button class="button-small card-image-controls-item-price open-modal myBtn" data-tcg-product-id="{{ variant.tcg_product_id }}" data-modal-id="myModal{{ loop.index }}">${{ '%.2f'|format(variant.display_price) }}</button>
+                        <button class="button-small card-image-controls-item-price open-modal myBtn" data-card-set="{{ variant.set_name }}" data-card-number="{{ variant.number }}" data-card-name="{{ variant.name }}" data-tcg-product-id="{{ variant.tcg_product_id }}" data-modal-id="myModal{{ loop.index }}">${{ '%.2f'|format(variant.display_price) }}</button>
                     </div>
                 </div>
                 

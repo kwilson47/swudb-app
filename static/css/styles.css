@@ -45,10 +45,10 @@
     justify-content: center;
 }
 
-/* .card-image-controls-item {
-    border-bottom: 2px solid #ccc; /* Add bottom border to the button container */
+/* .card-image-controls-item { */
+    /* border-bottom: 2px solid #ccc; Add bottom border to the button container */
     /* padding-bottom: 10px;  */
-/* }  */
+ /* }   */
 
 .card-grid-container {
     justify-content: center;
@@ -384,9 +384,12 @@ p {
 
     .card-image {
         margin-right: 0; /* Remove margin for better spacing on smaller screens */
-        margin-bottom: 60px;
+        
     }
 
+    .card-details>.card-image {
+        margin-bottom: 60px;
+    }
     .prev-link {
         margin-bottom: 20px;
     }
@@ -1113,6 +1116,7 @@ code {
 .card-image-controls {
     margin-top: .5rem;
     width: 100%;
+    padding-bottom: 25px;
   }
 
   .card-price-details-modal-entry+.card-price-details-modal-entry {
