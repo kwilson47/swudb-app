@@ -246,7 +246,7 @@ function buildUpdatedVariantsURL(variantField, selectedDisplayMode) {
     //     }
     //   },
       {
-        targets: [7, 8],
+        targets: [6, 7, 8],
         render: function (data, type, row) {
           if (type === 'type' || type === 'sort') {
               // Check if the data starts with a "+" or "-"

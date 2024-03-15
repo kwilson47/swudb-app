@@ -178,13 +178,15 @@
                         endif %} alt="Card Image" class="card-image">
                 </a>
                 {% endif %}
-            </div>
-            
-            <div class="card-image-controls">
-                <div class="card-image-controls-item"> 
-                    <button id="myBtn" class="button-small card-image-controls-item-price myBtn" data-card-set="{{ card.set_name }}" data-card-number="{{ card.number }}" data-card-name="{{ card.name }}" data-tcg-product-id="{{ card.tcg_product_id }}">${{ '%.2f'|format(card.display_price) }}</button>
+
+                <div class="card-image-controls">
+                    <div class="card-image-controls-item"> 
+                        <button id="myBtn" class="button-small card-image-controls-item-price myBtn" data-card-set="{{ card.set_name }}" data-card-number="{{ card.number }}" data-card-name="{{ card.name }}" data-tcg-product-id="{{ card.tcg_product_id }}">${{ '%.2f'|format(card.display_price) }}</button>
+                    </div>
                 </div>
             </div>
+            
+            
         </div>
 
             {% endfor %}

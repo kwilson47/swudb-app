@@ -163,3 +163,21 @@ function populateModal(data, cardSetName, cardNumber, cardName) {
   var modalTitle = 'Prices of <em>' + cardName + ' (' + cardSetName + ' ' + cardNumber + ')</em>';
   $('.my-modal-title').html(modalTitle);
 }
+
+// Function to initialize the button event listeners and append buttons to each card
+function initializeButtons() {
+  const buttons = document.querySelectorAll(".card-image-controls-item-price");
+  buttons.forEach(button => {
+      button.addEventListener("click", function() {
+          const cardSet = button.dataset.cardSet;
+          const cardNumber = button.dataset.cardNumber;
+          const cardName = button.dataset.cardName;
+          const tcgProductId = button.dataset.tcgProductId;
+          // Call function to open modal with appropriate data
+          openModal(cardSet, cardNumber, cardName, tcgProductId);
+      });
+  });
+}
+
+// Call initializeButtons function once during initialization
+initializeButtons();
