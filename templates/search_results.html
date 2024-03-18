@@ -103,7 +103,6 @@
             <tbody>
                 {% for card in cards %}
                 <tr class="card-row"
-                    onclick="window.location.href='/card/{{ card.set }}/{{ card.number }}/{{ card.name|replace('/', '-')|urlencode }}'"
                     front-image="{{ card.front_art }}"
                     {% if card.has_back %}
                          back-image="{{ card.back_art }}" 
@@ -111,7 +110,8 @@
 
                     <td class="table-cell">{{ card.set }}</td>
                     <td class="table-cell">{{ card.number }}</td>
-                    <td class="table-cell">{{ card.name }}</td>
+                    <td class="table-cell"
+                    onclick="window.location.href='/card/{{ card.set }}/{{ card.number }}/{{ card.name|replace('/', '-')|urlencode }}'"><span class="card-link">{{ card.name }}</span></td>
                     <td data-sort=" {% for aspect in card.aspects %}{{ aspect }}{% endfor %}">
                         <div class="aspect-icons">
                             {% for aspect_icon in card.aspect_icons %}
@@ -129,7 +129,13 @@
                     <td class="table-cell">{{ ' • '.join(card.traits) }}</td>
                     <td class="table-cell">{{ card.rarity }}</td>
                     <td class="table-cell">{{ card.artist }}</td>
-                    <td class="table-cell">${{ '%.2f'|format(card.display_price) }}</td>
+                    <td class="table-cell">
+                        <div class="card-image-controls">
+                            <div class="card-image-controls-item"> 
+                                <button id="myBtn" class="button-small card-image-controls-item-price myBtn" data-card-set="{{ card.set_name }}" data-card-number="{{ card.number }}" data-card-name="{{ card.name }}" data-tcg-product-id="{{ card.tcg_product_id }}">${{ '%.2f'|format(card.display_price) }}</button>
+                            </div>
+                        </div>
+                    </td>
                     {% if leader.name %}
                     <td class="table-cell">{{ card.penalty }}</td>
                     {% endif %}
@@ -191,47 +197,48 @@
 
             {% endfor %}
         </div>
-        <!-- The Modal -->
-        <div id="myModal" class="my-modal">
-            <div class="my-modal-header">
-                <div class="my-modal-title">
-                    
-                </div>
-            </div>
+        
 
-            <!-- Modal content -->
-            <div class="my-modal-body">
-                <div id="card-price-details-modal-entries">
-                    <div class="card-price-details-modal-entry">
-                        <div class="card-price-details-modal-entry-card-variant-type-name-container">
-                            "Normal"
-                        </div>
-                        <div class="card-price-details-modal-entry-prices">
-                            <div class="card-price-details-modal-entry-price">
-                                <span class="card-price-details-modal-entry-price-label"> Market </span>
-                                <span class="card-price-details-modal-entry-price-value"> $117 </span>
-                            </div>
-                        </div>
-                        <a href="" rel="external nofollow" target="_blank" class="card-price-details-modal-entry-vendor-button button button-plain button-small">
-                            <span aria-hidden="true" class="button-icon fa-solid fa-up-right-from-square"></span>
-                            View on TCGplayer
-                        </a>
-                    </div>
-               
-                </div>
+    </div>
+    <!-- The Modal -->
+    <div id="myModal" class="my-modal">
+        <div class="my-modal-header">
+            <div class="my-modal-title">
                 
-            </div>
-
-            <div class="my-modal-footer">
-            
-                <div class="modal-footer-buttons">
-                    <button type="button" class="button button-primary close-modal" data-hide="modal">
-                        Close
-                    </button>
-                </div>
             </div>
         </div>
 
+        <!-- Modal content -->
+        <div class="my-modal-body">
+            <div id="card-price-details-modal-entries">
+                <div class="card-price-details-modal-entry">
+                    <div class="card-price-details-modal-entry-card-variant-type-name-container">
+                        "Normal"
+                    </div>
+                    <div class="card-price-details-modal-entry-prices">
+                        <div class="card-price-details-modal-entry-price">
+                            <span class="card-price-details-modal-entry-price-label"> Market </span>
+                            <span class="card-price-details-modal-entry-price-value"> $117 </span>
+                        </div>
+                    </div>
+                    <a href="" rel="external nofollow" target="_blank" class="card-price-details-modal-entry-vendor-button button button-plain button-small">
+                        <span aria-hidden="true" class="button-icon fa-solid fa-up-right-from-square"></span>
+                        View on TCGplayer
+                    </a>
+                </div>
+           
+            </div>
+            
+        </div>
+
+        <div class="my-modal-footer">
+        
+            <div class="modal-footer-buttons">
+                <button type="button" class="button button-primary close-modal" data-hide="modal">
+                    Close
+                </button>
+            </div>
+        </div>
     </div>
     <script src="{{ url_for('static', filename='js/results.js') }}"></script>
 {% endblock %}
