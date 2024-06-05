@@ -672,143 +672,8 @@ def process_response(response):
 def process_item(item, set_info = None):
     # Process a single item from the DynamoDB response and return a card object
     # Extract the necessary attributes from the item
-    # print(item)  
-
-    
+   
     variants = item.get('variantCardNumbers', {}).get('SS', [])
-    # print("Variants")
-    # print(variants)
-    # if 'isVariant' in item and item['isVariant']['BOOL']:
-        # display_price = None
-        # mid_price = None
-        # front_art = item['frontArt']['S']
-        # number = item['cardNumber']['S']
-        # original_number = item['originalCardNumber']['S']
-        # card_set = item['setId']['S']
-        # original_set = item.get('originalSet', {}).get('S', card_set)
-        # back_art = item.get('backArt', {}).get('S', None)
-        # artist = item.get('artist', {}).get('S', None)
-        # if artist == None:
-        #     use_original_artist = True
-        # else:
-        #     use_original_artist = False
-        # v_front_art = item.get('verticalFrontArt', {}).get('S', None)
-        # variant_type = item.get('variantType', {}).get('S', 'Normal')
-        
-        # variants.remove(number)
-
-        # tcg_product_id = item.get('tcgplayerId', {}).get('S', None)
-        # print(tcg_product_id)
-        # if tcg_product_id:
-        #     if variant_type == 'Showcase':
-        #         subtype = 'Foil'
-        #     else:
-        #         subtype = 'Normal'
-        #     response2 = dynamodb.query(
-        #         TableName='Prices',
-        #         KeyConditionExpression='productId = :product_id and subTypeName = :subtype_name',
-        #         ExpressionAttributeValues={
-        #             ':product_id': {'S': tcg_product_id},
-        #             ':subtype_name': {'S': subtype}
-        #         }
-        #     )
-        #     if 'Items' in response2 and len(response2['Items']) > 0:
-        #         item2 = response2['Items'][0]
-        #         # print("Price items:")
-        #         # print(item2)
-        #         market_price = item2.get('marketPrice', {}).get('N', None)
-        #         mid_price = item2.get('midPrice', {}).get('N', None)
-        #         url = item2.get('url', {}).get('S', None)
-        #         if not market_price:
-        #             display_price = mid_price
-        #         else:
-        #             display_price = market_price
-        #         # print("display price:")
-        #         # print(display_price)
-        #     else:
-        #         market_price = None
-        #         mid_price = None
-        #         url = None
-        #         display_price = None
-        # else:
-        #     market_price = None
-        #     display_price = None
-        #     mid_price = None
-        #     url = None
-        
-        # response = dynamodb.query(
-        #     TableName=dynamodb_table,
-        #     KeyConditionExpression='setId = :set_id and cardNumber = :card_number',
-        #     ExpressionAttributeValues={
-        #         ':set_id': {'S': original_set},
-        #         ':card_number': {'S': item['originalCardNumber']['S']}
-        #     }
-        # )
-        # item2 = response['Items'][0]
-        # variants = item2.get('variantCardNumbers', {}).get('SS', [])
-        # variants.append(str(original_set + '-' + original_number))
-        # variants.remove(str(card_set + '-' + number))
-        # if use_original_artist:
-        #     artist = item.get('artist', {}).get('S', None)
-
-        
-
-        
-    # else:
-    #     number = item['cardNumber']['S']
-    #     front_art = item['frontArt']['S']
-    #     back_art = item.get('backArt', {}).get('S', None)
-    #     artist = item.get('artist', {}).get('S', None)
-    #     v_front_art = item.get('verticalFrontArt', {}).get('S', None)
-    #     variant_type = item.get('variantType', {}).get('S', 'Original')
-    #     card_set = item['setId']['S']
-
-    #     tcg_product_id = item.get('tcgplayerId', {}).get('S', None)
-    #     # print(tcg_product_id)
-    #     if tcg_product_id:
-    #         response2 = dynamodb.query(
-    #             TableName='Prices',
-    #             KeyConditionExpression='productId = :product_id and subTypeName = :subtype_name',
-    #             ExpressionAttributeValues={
-    #                 ':product_id': {'S': tcg_product_id},
-    #                 ':subtype_name': {'S': 'Normal'}
-    #             }
-    #         )
-    #         if 'Items' in response2 and len(response2['Items']) > 0:
-    #             item2 = response2['Items'][0]
-    #             market_price = item2.get('marketPrice', {}).get('N', None)
-    #             mid_price = item2.get('midPrice', {}).get('N', None)
-    #             url = item2.get('url', {}).get('S', None)
-    #             if not market_price:
-    #                 display_price = mid_price
-    #             else:
-    #                 display_price = market_price
-    #         else:
-    #             market_price = None
-    #             mid_price = None
-    #             url = None
-    #             display_price = None
-    #         # print("display price:")
-    #         # print(display_price)
-    #     else:
-    #         market_price = None
-    #         display_price = None
-    #         mid_price = None
-    #         url = None
-
-        # set_info = dynamodb.query(
-        #     TableName='Sets',
-        #     KeyConditionExpression='setId = :set_id',
-        #     ExpressionAttributeValues={
-        #         ':set_id': {'S': card_set}
-        #     }
-        # )
-        # max_element = set_info['Items'][0]["maxElement"]['S']
-        # set_name = set_info['Items'][0]['fullName'][]
-        
-    # print(item)   
-    # card_set = item['setId']['S']
-
     number = item['cardNumber']['S']
     front_art = item['frontArt']['S']
     back_art = item.get('backArt', {}).get('S', None)
@@ -820,41 +685,6 @@ def process_item(item, set_info = None):
     display_price = item.get('displayPrice', {}).get('N', 0)
     url = item.get('url', {}).get('S', None)
     tcg_product_id = item.get('tcgplayerId', {}).get('S', None)
-    # print(tcg_product_id)
-    # if tcg_product_id:
-    #     if variant_type == 'Showcase':
-    #         subtype = 'Foil'
-    #     else:
-    #         subtype = 'Normal'
-    #     response2 = dynamodb.query(
-    #         TableName='Prices',
-    #         KeyConditionExpression='productId = :product_id and subTypeName = :subtype_name',
-    #         ExpressionAttributeValues={
-    #             ':product_id': {'S': tcg_product_id},
-    #             ':subtype_name': {'S': subtype}
-    #         }
-    #     )
-    #     if 'Items' in response2 and len(response2['Items']) > 0:
-    #         item2 = response2['Items'][0]
-    #         market_price = item2.get('marketPrice', {}).get('N', None)
-    #         mid_price = item2.get('midPrice', {}).get('N', None)
-    #         url = item2.get('url', {}).get('S', None)
-    #         if not market_price:
-    #             display_price = mid_price
-    #         else:
-    #             display_price = market_price
-    #     else:
-    #         market_price = None
-    #         mid_price = None
-    #         url = None
-    #         display_price = None
-    #     # print("display price:")
-    #     # print(display_price)
-    # else:
-    #     market_price = None
-    #     display_price = None
-    #     mid_price = None
-    #     url = None
     
     type = item['type']['S']
 
@@ -872,11 +702,9 @@ def process_item(item, set_info = None):
         matching_element = next((element for element in set_info if element['setId']['S'] == card_set), None)
         max_element = matching_element['maxElement']['S']
         set_name = matching_element['fullName']['S']
-    # max_element = "252"
-    # set_name = "hello"
     
-    # v_front_art = item.get('verticalFrontArt', {}).get('S', None)
     rarity = item['rarity']['S']
+
     if rarity == 'C':
         rarity = "Common"
     elif rarity == 'U':
@@ -953,9 +781,7 @@ def process_item(item, set_info = None):
         'variant_type': variant_type,
         'max_element': max_element,
         'set_name': set_name,
-        # 'market_price': market_price,
         'display_price': float(display_price),
-        # 'mid_price': mid_price,
         'url': url,
         'tcg_product_id': tcg_product_id
     }
@@ -1175,6 +1001,8 @@ def replace_aspects(text):
         text = text.replace(
             placeholder, f'<span class="aspect-icon"><img src="{icon_path}" alt="{aspect} icon"></span>')
 
+    icon_path = url_for('static', filename='images/cost1.png')
+    text = text.replace( '{C=1}', f'<span class="aspect-icon"><img src="{icon_path}" alt="cost1 icon"></span>')
     return Markup(text)
 
 @app.route('/get_prices', methods=['GET'])
