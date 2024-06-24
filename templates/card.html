@@ -121,7 +121,7 @@
                 
                 {% if card.back_text %}
                 <div class="card-back-text">
-                    <p>{{ card.back_text | safe }}</p>
+                    <p>{{ card.back_text | replace_aspects | safe }}</p>
                 </div>
                 {% endif %}
 
