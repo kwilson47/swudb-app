@@ -1001,18 +1001,37 @@ def replace_aspects(text):
         text = text.replace(
             placeholder, f'<span class="aspect-icon"><img src="{icon_path}" alt="{aspect} icon"></span>')
 
-    icon_path_1 = url_for('static', filename='images/cost1.png')
-    icon_path_2 = url_for('static', filename='images/cost2.png')
-    icon_path_3 = url_for('static', filename='images/cost3.png')
-    text = text.replace( '{C=1}', f'<span class="aspect-icon"><img src="{icon_path_1}" alt="cost1 icon"></span>')
-    text = text.replace( '{C=2}', f'<span class="aspect-icon"><img src="{icon_path_2}" alt="cost2 icon"></span>')
-    text = text.replace( '{C=3}', f'<span class="aspect-icon"><img src="{icon_path_3}" alt="cost2 icon"></span>')
+    for i in range(1, 10):  # This will go from 1 to 9
+        icon_path = url_for('static', filename=f'images/cost{i}.png')
+        text = text.replace(f'{{C={i}}}', f'<span class="aspect-icon"><img src="{icon_path}" alt="cost{i} icon"></span>')
 
-    keywords = ['Smuggle']
+
+    keywords = ['Smuggle', 'Bounties', 'Ambush']
 
     for keyword in keywords:
         placeholder = '{' + keyword + '}'
         text = text.replace(placeholder, f'<span class="red-text"><b>{keyword}</b></span>')
+
+
+    # Define a function to replace the placeholder
+    def replace_power_placeholder(match):
+        # Extract the power value from the match
+        power = match.group(1)
+        # Return the replacement text
+        return f'<span class="red-text">{power}</span>'
+
+    # Define a function to replace the placeholder
+    def replace_hp_placeholder(match):
+        # Extract the power value from the match
+        power = match.group(1)
+        # Return the replacement text
+        return f'<span class="blue-text">{power}</span>'
+
+    pattern = re.compile(r'\{([+-]?\d+)p\}')
+    text = pattern.sub(replace_power_placeholder, text)
+
+    pattern = re.compile(r'\{([+-]?\d+)h\}')
+    text = pattern.sub(replace_hp_placeholder, text)
     
     return Markup(text)
 
