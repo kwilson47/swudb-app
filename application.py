@@ -475,41 +475,74 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
         filter_expression_groups.append(' AND '.join(current_group))
 
     filter_expression = ' OR '.join(filter_expression_groups)
+
+    items = []
+    scan_kwargs = {
+        'TableName': 'Cards3'
+    }
+
     if not expression_values:
         if not include_variants and not variant and include_all == False:
-            filter_expression += f"attribute_not_exists(isVariant) "
-        if not filter_expression:
-            response = dynamodb.scan(
-                TableName=dynamodb_table
-            )
-        else:
-            response = dynamodb.scan(
-                TableName=dynamodb_table,
-                FilterExpression=filter_expression
-            )
+            filter_expression += "attribute_not_exists(isVariant) "
+        if filter_expression:
+            scan_kwargs['FilterExpression'] = filter_expression
     elif not expression_attribute_names:
         if not include_variants and not variant and include_all == False:
-            filter_expression += f" AND attribute_not_exists(isVariant) "
-        response = dynamodb.scan(
-            TableName=dynamodb_table,
-            FilterExpression=filter_expression,
-            ExpressionAttributeValues=expression_values
-        )
+            filter_expression += " AND attribute_not_exists(isVariant) "
+            print(filter_expression)
+        scan_kwargs['FilterExpression'] = filter_expression
+        scan_kwargs['ExpressionAttributeValues'] = expression_values
     else:
-        # Execute the query and retrieve the matching items
-        # print(filter_expression)
-        if not include_variants and not variant and include_all == False:
-            filter_expression += f" AND attribute_not_exists(isVariant) "
+        if include_variants == False and not variant and include_all == False:
+            filter_expression += " AND attribute_not_exists(isVariant) "
+        print(filter_expression)
+        scan_kwargs['FilterExpression'] = filter_expression
+        scan_kwargs['ExpressionAttributeValues'] = expression_values
+        scan_kwargs['ExpressionAttributeNames'] = expression_attribute_names
 
-        response = dynamodb.scan(
-            TableName=dynamodb_table,
-            FilterExpression=filter_expression,
-            ExpressionAttributeValues=expression_values,
-            ExpressionAttributeNames=expression_attribute_names
-        )
+    while True:
+        response = dynamodb.scan(**scan_kwargs)
+        items.extend(response.get('Items', []))
+
+        if 'LastEvaluatedKey' not in response:
+            break
+
+        scan_kwargs['ExclusiveStartKey'] = response['LastEvaluatedKey']
+    # if not expression_values:
+    #     if not include_variants and not variant and include_all == False:
+    #         filter_expression += f"attribute_not_exists(isVariant) "
+    #     if not filter_expression:
+    #         response = dynamodb.scan(
+    #             TableName=dynamodb_table
+    #         )
+    #     else:
+    #         response = dynamodb.scan(
+    #             TableName=dynamodb_table,
+    #             FilterExpression=filter_expression
+    #         )
+    # elif not expression_attribute_names:
+    #     if not include_variants and not variant and include_all == False:
+    #         filter_expression += f" AND attribute_not_exists(isVariant) "
+    #     response = dynamodb.scan(
+    #         TableName=dynamodb_table,
+    #         FilterExpression=filter_expression,
+    #         ExpressionAttributeValues=expression_values
+    #     )
+    # else:
+    #     # Execute the query and retrieve the matching items
+    #     # print(filter_expression)
+    #     if not include_variants and not variant and include_all == False:
+    #         filter_expression += f" AND attribute_not_exists(isVariant) "
+
+    #     response = dynamodb.scan(
+    #         TableName=dynamodb_table,
+    #         FilterExpression=filter_expression,
+    #         ExpressionAttributeValues=expression_values,
+    #         ExpressionAttributeNames=expression_attribute_names
+    #     )
 
     # Process the response and extract the matching cards
-    cards = process_response(response)
+    cards = process_response(items)
     if leader and base:
         set_card = leader.split('-')
         set_id = set_card[0]
@@ -629,9 +662,9 @@ def construct_expression_attribute_name(attribute_name):
     return {f'#{attribute_name}': attribute_name}
 
 
-def process_response(response):
+def process_response(items):
     # Process the DynamoDB response and extract the matching cards
-    items = response['Items']
+    # items = response['Items']
     # print("Items:\n")
     # print(items)
     set_info = dynamodb.scan(
@@ -1006,7 +1039,8 @@ def replace_aspects(text):
         text = text.replace(f'{{C={i}}}', f'<span class="aspect-icon"><img src="{icon_path}" alt="cost{i} icon"></span>')
 
 
-    keywords = ['Smuggle', 'Bounties', 'Ambush']
+    keywords = ['Smuggle', 'Bounties', 'Ambush', 'Bounty', 'Overwhelm', 'Sentinel', 'Shielded', 'Raid 3', 'Saboteur', 'Grit',
+    'Restore 2', 'Restore 1', 'Raid 2']
 
     for keyword in keywords:
         placeholder = '{' + keyword + '}'
