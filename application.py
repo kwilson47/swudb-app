@@ -708,12 +708,11 @@ def process_item(item, set_info = None):
    
     variants = item.get('variantCardNumbers', {}).get('SS', [])
     number = item['cardNumber']['S']
-    front_art = item['frontArt']['S']
-    back_art = item.get('backArt', {}).get('S', None)
     artist = item.get('artist', {}).get('S', None)
-    v_front_art = item.get('verticalFrontArt', {}).get('S', None)
     variant_type = item.get('variantType', {}).get('S', 'Original')
     card_set = item['setId']['S']
+
+    front_art = 'https://cdn.swu-db.com/images/cards/' + card_set + '/' + number + '.png' 
 
     display_price = item.get('displayPrice', {}).get('N', 0)
     url = item.get('url', {}).get('S', None)
@@ -751,6 +750,10 @@ def process_item(item, set_info = None):
     
     
     has_back = item['hasBack']['BOOL']
+    if has_back:
+        back_art = 'https://cdn.swu-db.com/images/cards/' + card_set + '/' + number + '-b.png'
+    else:
+        back_art = None
     power = item.get('printedPower', {}).get('S', None)
     if power == None:
         power = item.get('power', {}).get('N', None)
@@ -764,6 +767,11 @@ def process_item(item, set_info = None):
     # back_art = item.get('backArt', {}).get('S', None)
     # artist = item.get('artist', {}).get('S', None)
     is_landscape = item.get('isLandscape', {}).get('BOOL', False)
+
+    if is_landscape:
+        v_front_art = 'https://cdn.swu-db.com/images/cards/' + card_set + '/' + number + '-r.png'
+    else:
+        v_front_art = None
     aspect_icons = []
     aspects_response = item.get('aspects', {}).get('L', [])
     aspects = [aspect['S'] for aspect in aspects_response]
