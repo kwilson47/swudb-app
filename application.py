@@ -1048,7 +1048,7 @@ def replace_aspects(text):
 
 
     keywords = ['Smuggle', 'Bounties', 'Ambush', 'Bounty', 'Overwhelm', 'Sentinel', 'Shielded', 'Raid 3', 'Saboteur', 'Grit',
-    'Restore 2', 'Restore 1', 'Raid 2', 'Exploit 2', 'Coordinate', 'Exploit 1', 'Exploit 3', 'Exploit 4']
+    'Restore 2', 'Restore 1', 'Raid 2', 'Exploit 2', 'Coordinate', 'Exploit 1', 'Exploit 3', 'Exploit 4', 'Raid 1', 'Restore 3']
 
     for keyword in keywords:
         placeholder = '{' + keyword + '}'
