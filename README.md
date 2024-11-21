@@ -29,7 +29,7 @@ All card data is stored in a Cards table in DynamoDB. Additionally, a DynamoDB S
 
 # Lambda
 
-The application uses three lambda functions:<br/>
+The application uses the following lambda functions:<br/>
 ## swudb-get-leader-base-traits
 
 This is the function mentioned above that is triggered by the DynamoDB stream. When a user performs a search, theree fields are prepopulated with potential choices: leader, bases, and traits. This lambda function retrieves those values from the DynamoDB table and stores them in an ElastiCache memcached cluster for faster retrieval.
@@ -39,6 +39,9 @@ This is the function mentioned above that is triggered by the DynamoDB stream. W
 
 These are the backing lambda functions for the two API methods mentioned above
 
+## populate-card-prices
+
+Runs daily and refreshes the prices table with the most up to date prices for each card. Data is retrieved from tcgplayer.com
 # Elastic Load Balancer
 
 An application load balancer acts as the target for www requests and passes those requests to a target group. This target group is associated with an auto-scaling group. This auto-scaling group spans multiple AZs for high availability.
