@@ -190,8 +190,10 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
     # print(expressions)
     filter_expression_groups = []
     current_group = []
+    counter = 0
 
     for expression in expressions:
+        counter += 1
         filter_expression = ''
         parentheses_removed = 0
         expression = expression.lower()
@@ -338,11 +340,21 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
                 comparison_operator = 'contains'
                 attribute_value = match.group(1).lower()
                 result_string += " the text includes " + attribute_value
-                filter_expression += f"contains (#{attribute_name}, :{attribute_name})"
-                expression_values.update(construct_expression_value(
-                    attribute_name, attribute_value, is_numeric=False))
-                expression_attribute_names.update(
-                    construct_expression_attribute_name(attribute_name))
+
+                # Use a unique placeholder for each value
+                placeholder_name = f"#{attribute_name}_{counter}"
+                value_placeholder = f":{attribute_name}_{counter}"
+
+                # filter_expressions.append(f"contains({placeholder_name}, {value_placeholder})")
+                filter_expression += f"contains ({placeholder_name}, {value_placeholder})"
+                expression_values.update(construct_expression_value(attribute_name + f"_{counter}", attribute_value, is_numeric=False))
+                expression_attribute_names.update({placeholder_name: attribute_name})
+
+                # filter_expression += f"contains (#{attribute_name}, :{attribute_name})"
+                # expression_values.update(construct_expression_value(
+                #     attribute_name, attribute_value, is_numeric=False))
+                # expression_attribute_names.update(
+                #     construct_expression_attribute_name(attribute_name))
             elif artist:
                 attribute_name = 'artistSearch'
                 comparison_operator = 'contains'
@@ -492,6 +504,7 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
             print(filter_expression)
         scan_kwargs['FilterExpression'] = filter_expression
         scan_kwargs['ExpressionAttributeValues'] = expression_values
+        print(scan_kwargs)
     else:
         if include_variants == False and not variant and include_all == False:
             filter_expression += " AND attribute_not_exists(isVariant) "
@@ -499,6 +512,7 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
         scan_kwargs['FilterExpression'] = filter_expression
         scan_kwargs['ExpressionAttributeValues'] = expression_values
         scan_kwargs['ExpressionAttributeNames'] = expression_attribute_names
+        print(scan_kwargs)
 
     while True:
         response = dynamodb.scan(**scan_kwargs)
@@ -652,7 +666,7 @@ def construct_expression_value(attribute_name, attribute_value, is_numeric=True)
         # Assuming numeric attribute
         return {f':value_{attribute_name}': {'N': attribute_value}}
     else:
-        expression_value[':' + attribute_name] = {'S': attribute_value}
+        expression_value[f":{attribute_name}"] = {'S': attribute_value}
 
     return expression_value
 
