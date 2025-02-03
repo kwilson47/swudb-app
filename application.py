@@ -434,13 +434,25 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
                 result_string += " the variant includes " + attribute_value
                 if attribute_value == 'H':
                     attribute_value = "Hyperspace"
+                    include_all = True
                 elif attribute_value == 'S':
                     attribute_value = "Showcase"
+                    include_all = True
                 elif attribute_value == "A" or attribute_value == "ALL":
                     include_all = True
                     continue
 
                 if include_all == False:
+                    attribute_placeholder = attribute_name + '_' + attribute_value
+                    attribute_placeholder = re.sub(r'[ "\']', '_', attribute_placeholder)
+                    comparison_operator = 'contains'
+                    filter_expression += f"contains (#{attribute_name}, :{attribute_placeholder})"
+                    
+                    expression_values.update(construct_expression_value(
+                        attribute_placeholder, attribute_value, is_numeric=False))
+                    expression_attribute_names.update(
+                        construct_expression_attribute_name(attribute_name))
+                else:
                     attribute_placeholder = attribute_name + '_' + attribute_value
                     attribute_placeholder = re.sub(r'[ "\']', '_', attribute_placeholder)
                     comparison_operator = 'contains'
@@ -777,6 +789,8 @@ def process_item(item, set_info = None):
     hp = item.get('printedHP', {}).get('S', None)
     if hp == None:
         hp = item.get('HP', {}).get('N', None)
+    upgrade_power = item.get('upgradePowerDisplay', {}).get('S', None)
+    upgrade_hp = item.get('upgradeHPDisplay', {}).get('S', None)
     name = item['name']['S']
     # back_art = item.get('backArt', {}).get('S', None)
     # artist = item.get('artist', {}).get('S', None)
@@ -838,9 +852,10 @@ def process_item(item, set_info = None):
         'set_name': set_name,
         'display_price': float(display_price),
         'url': url,
-        'tcg_product_id': tcg_product_id
+        'tcg_product_id': tcg_product_id,
+        'upgrade_power': upgrade_power,
+        'upgrade_hp': upgrade_hp
     }
-
     return card
 
 
@@ -877,7 +892,6 @@ def card(set, number, name):
     # Retrieve card information based on the set, number, and name
     # Render the card page template with the retrieved card information
     my_card = get_card(set, number)
-    # print(my_card)
     next_card = get_next_card(set, number)
     prev_card = get_previous_card(set, number)
     variants = get_variants(my_card["variants"])
@@ -1062,7 +1076,7 @@ def replace_aspects(text):
 
 
     keywords = ['Smuggle', 'Bounties', 'Ambush', 'Bounty', 'Overwhelm', 'Sentinel', 'Shielded', 'Raid 3', 'Saboteur', 'Grit',
-    'Restore 2', 'Restore 1', 'Raid 2', 'Exploit 2', 'Coordinate', 'Exploit 1', 'Exploit 3', 'Exploit 4', 'Raid 1', 'Restore 3']
+    'Restore 2', 'Restore 1', 'Raid 2', 'Exploit 2', 'Coordinate', 'Exploit 1', 'Exploit 3', 'Exploit 4', 'Raid 1', 'Restore 3', 'Piloting']
 
     for keyword in keywords:
         placeholder = '{' + keyword + '}'

@@ -127,6 +127,7 @@
 
                 <div class="card-stats">
                     <p><span class="card-power">{{ card.power }}</span> / <span class="card-hp">{{card.hp}}</span></p>
+                    
                 </div>
                 <div class="card-artist">
                     <p>Artist: <a href='/search?q=artist%3A"{{ card.artist|urlencode }}"'>{{ card.artist }}</a></p>
@@ -160,6 +161,9 @@
                 <div class="card-stats">
                     {% if card.power %}
                     <p><span class="card-power">{{ card.power }}</span> / <span class="card-hp">{{card.hp}}</span></p>
+                    {% if card.upgrade_power %}
+                        <p><span class="card-power">{{ card.upgrade_power }}</span> / <span class="card-hp">{{card.upgrade_hp}}</span></p>
+                    {% endif %}
                     {% elif card.hp %}
                     <p><span class="card-hp">Starting HP: {{card.hp}}</span></p>
                     {% endif %}
