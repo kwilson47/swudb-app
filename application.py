@@ -1080,7 +1080,7 @@ def replace_aspects(text):
 
     for keyword in keywords:
         placeholder = '{' + keyword + '}'
-        text = text.replace(placeholder, f'<span class="red-text"><b>{keyword}</b></span>')
+        text = text.replace(placeholder, f'<span class="keyword-text"><b>{keyword}</b></span>')
 
 
     # Define a function to replace the placeholder

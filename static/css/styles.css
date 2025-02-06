@@ -91,7 +91,7 @@ body {
 }
 
 p {
-    font-size: 18px;
+    /* font-size: 18px; */
     margin-left: 2px;
     margin-right: 2px;
 }
@@ -404,13 +404,22 @@ p {
     cursor: pointer;
 }
 
-
-.red-text {
+.keyword-text {
     color: maroon;
 }
 
+.red-text {
+    font-weight: bold;
+    color: white;
+    text-shadow: -1px -1px 0 maroon, 1px -1px 0 maroon, -1px 1px 0 maroon, 1px 1px 0 maroon;
+    margin-right: 2px;
+}
+
 .blue-text {
-    color: darkcyan;
+    font-weight: bold;
+    color: white;
+    text-shadow: -1px -1px 0 darkcyan, 1px -1px 0 darkcyan, -1px 1px 0 darkcyan, 1px 1px 0 darkcyan;
+    margin-left: 2px;
 }
 
 .cost-text {
@@ -1129,3 +1138,30 @@ code {
     margin-top: .75rem;
     padding-top: .75rem;
   }
+
+.pilot-text {
+    border-style: double;
+    display: inline-block;
+    padding: 5px;
+    border-radius: 7.5px;
+    border-color: blue;
+    margin-top: 10px;
+}
+
+.epic-action-text {
+    border-style: double;
+    display: inline-block;
+    padding: 5px;
+    border-radius: 7.5px;
+    border-color: orange;
+    margin-top: 10px;
+}
+
+.sentinel-text {
+    border-style: double;
+    display: inline-block;
+    padding: 5px;
+    border-radius: 7.5px;
+    border-color: red;
+    margin-top: 10px;
+}

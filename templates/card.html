@@ -73,7 +73,7 @@
                         <img src="{{ aspect_icon }}" alt="Aspect Icon">
                     </div>
                     {% endfor %}
-                    <p><strong>{% if card.is_unique %} ⟡ {% endif %}<a href='/search?q="{{ card.name[:card.name.rfind(" ", 0, card.name.find("-"))] }}"'>{{ card.name }}</a></strong></p>
+                    <p><strong>{% if card.is_unique %} ⟡ <a href='/search?q="{{ card.name[:card.name.rfind(" ", 0, card.name.find("-"))] }}"'>{% endif %}{{ card.name }}{% if card.is_unique %}</a>{% endif %}</strong></p>
                 </div>
 
             </div>
@@ -85,7 +85,11 @@
                 </div>
                 <div class="card-traits">
                     {% if card.traits %}
-                    <p>{{ ' • '.join(card.traits) }}</p>
+                        <p>
+                            {% for trait in card.traits %}
+                                <a href="/search?q=trait%3A'{{ trait }}'">{{ trait }}</a>{% if not loop.last %} • {% endif %}
+                            {% endfor %}
+                        </p>
                     {% endif %}
                 </div>
                 {% if card.text %}
@@ -100,8 +104,8 @@
 
                 {% endif %}
                 {% if card.epic_action %}
-                <div class="card-epic-action">
-                    <p>{{ card.epic_action | safe }}</p>
+                <div class="card-epic-action"><span class='epic-action-text'>
+                    <p>{{ card.epic_action | safe }}</p></span>
                 </div>
                 {% endif %}
 
@@ -113,9 +117,14 @@
 
                 <div class="card-traits">
                     {% if card.traits %}
-                    <p>{{ ' • '.join(card.traits) }}</p>
+                        <p>
+                            {% for trait in card.traits %}
+                                <a href="/search?q=trait%3A'{{ trait }}'">{{ trait }}</a>{% if not loop.last %} • {% endif %}
+                            {% endfor %}
+                        </p>
                     {% endif %}
                 </div>
+                
 
 
                 
@@ -127,6 +136,9 @@
 
                 <div class="card-stats">
                     <p><span class="card-power">{{ card.power }}</span> / <span class="card-hp">{{card.hp}}</span></p>
+                    {% if card.upgrade_power %}
+                        <p><span class="card-power">{{ card.upgrade_power }}</span> / <span class="card-hp">{{card.upgrade_hp}}</span></p>
+                    {% endif %}
                     
                 </div>
                 <div class="card-artist">
@@ -144,7 +156,11 @@
                 </div>
                 <div class="card-traits">
                     {% if card.traits %}
-                    <p>{{ ' • '.join(card.traits) }}</p>
+                        <p>
+                            {% for trait in card.traits %}
+                                <a href="/search?q=trait%3A'{{ trait }}'">{{ trait }}</a>{% if not loop.last %} • {% endif %}
+                            {% endfor %}
+                        </p>
                     {% endif %}
                 </div>
 
