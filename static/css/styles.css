@@ -1159,7 +1159,7 @@ code {
 
 .sentinel-text {
     border-style: double;
-    display: inline-block;
+    display: block;
     padding: 5px;
     border-radius: 7.5px;
     border-color: red;

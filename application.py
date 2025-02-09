@@ -72,7 +72,7 @@ def get_card(set_id, card_number):
 def get_variants(variant_numbers):
     variant_cards = []
     for variant in variant_numbers:
-        set_id, card_id = variant.split('-')
+        set_id, card_id = variant.split('-', 1)
         card = get_card(set_id, card_id)
         variant_cards.append(card)
     return variant_cards
@@ -897,18 +897,18 @@ def card(set, number, name):
     variants = get_variants(my_card["variants"])
     return render_template('card.html', set=set, number=number, name=name, card=my_card, next_card=next_card, prev_card=prev_card, variants=variants)
 
-@app.route('/submit-feedback', methods=['POST'])
-def submit_feedback():
-    message = request.form.get('message')
+# @app.route('/submit-feedback', methods=['POST'])
+# def submit_feedback():
+#     message = request.form.get('message')
 
-    # Process the feedback data, e.g., publish to SNS
-    publish_feedback_to_sns(message)
+#     # Process the feedback data, e.g., publish to SNS
+#     publish_feedback_to_sns(message)
 
-    # Flash a success message
-    flash('Your feedback has been submitted successfully!', 'success')
+#     # Flash a success message
+#     flash('Your feedback has been submitted successfully!', 'success')
 
-    # Redirect to the homepage after successful submission
-    return redirect(url_for('homepage'))
+#     # Redirect to the homepage after successful submission
+#     return redirect(url_for('homepage'))
 
 @app.route('/syntax')
 def syntax():
@@ -919,9 +919,9 @@ def api():
     return render_template('api.html')
 
 
-@app.route('/feedback')
-def feedback():
-    return render_template('feedback.html')
+# @app.route('/feedback')
+# def feedback():
+#     return render_template('feedback.html')
 
 @app.route('/resources')
 def resources():
