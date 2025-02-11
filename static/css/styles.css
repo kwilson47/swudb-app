@@ -45,6 +45,10 @@
     justify-content: center;
 }
 
+.card-grid img {
+    max-width: 275px;
+}
+
 /* .card-image-controls-item { */
     /* border-bottom: 2px solid #ccc; Add bottom border to the button container */
     /* padding-bottom: 10px;  */
@@ -52,6 +56,14 @@
 
 .card-grid-container {
     justify-content: center;
+}
+
+.card-set-item {
+    padding: .75rem;
+}
+
+.card-set-title {
+    font-weight: bold;
 }
 
 
@@ -279,6 +291,7 @@ p {
 
 .card-stats {
     padding-left: 5px;
+    border-bottom: 1px black dotted;
 }
 
 .card-artist {
@@ -288,6 +301,7 @@ p {
 .card-set {
     display: flex;
     padding-left: 5px;
+    padding-right: 5px;
     justify-content: space-between;
 }
 
@@ -409,14 +423,16 @@ p {
 }
 
 .red-text {
-    font-weight: bold;
+    font-weight: bolder;
+    font-size: larger;
     color: white;
     text-shadow: -1px -1px 0 maroon, 1px -1px 0 maroon, -1px 1px 0 maroon, 1px 1px 0 maroon;
     margin-right: 2px;
 }
 
 .blue-text {
-    font-weight: bold;
+    font-weight: bolder;
+    font-size: larger;
     color: white;
     text-shadow: -1px -1px 0 darkcyan, 1px -1px 0 darkcyan, -1px 1px 0 darkcyan, 1px 1px 0 darkcyan;
     margin-left: 2px;

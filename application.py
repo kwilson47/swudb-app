@@ -787,6 +787,7 @@ def process_item(item, set_info = None):
     text = item.get('textStyled', {}).get('S', None)
     cost = item.get('cost', {}).get('N', None)
     hp = item.get('printedHP', {}).get('S', None)
+    number_display = item.get('cardNumberDisplay', {}).get('S', None)
     if hp == None:
         hp = item.get('HP', {}).get('N', None)
     upgrade_power = item.get('upgradePowerDisplay', {}).get('S', None)
@@ -854,7 +855,8 @@ def process_item(item, set_info = None):
         'url': url,
         'tcg_product_id': tcg_product_id,
         'upgrade_power': upgrade_power,
-        'upgrade_hp': upgrade_hp
+        'upgrade_hp': upgrade_hp,
+        'number_display': number_display
     }
     return card
 
@@ -1070,13 +1072,13 @@ def replace_aspects(text):
         text = text.replace(
             placeholder, f'<span class="aspect-icon"><img src="{icon_path}" alt="{aspect} icon"></span>')
 
-    for i in range(1, 10):  # This will go from 1 to 9
+    for i in range(0, 10):  # This will go from 1 to 9
         icon_path = url_for('static', filename=f'images/cost{i}.png')
         text = text.replace(f'{{C={i}}}', f'<span class="aspect-icon"><img src="{icon_path}" alt="cost{i} icon"></span>')
 
 
     keywords = ['Smuggle', 'Bounties', 'Ambush', 'Bounty', 'Overwhelm', 'Sentinel', 'Shielded', 'Raid 3', 'Saboteur', 'Grit',
-    'Restore 2', 'Restore 1', 'Raid 2', 'Exploit 2', 'Coordinate', 'Exploit 1', 'Exploit 3', 'Exploit 4', 'Raid 1', 'Restore 3', 'Piloting']
+    'Restore 2', 'Restore 1', 'Raid 2', 'Exploit 2', 'Coordinate', 'Exploit 1', 'Exploit 3', 'Exploit 4', 'Raid 1', 'Restore 3', 'Piloting', 'Keywords']
 
     for keyword in keywords:
         placeholder = '{' + keyword + '}'
