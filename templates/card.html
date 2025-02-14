@@ -73,7 +73,7 @@
                         <img src="{{ aspect_icon }}" alt="Aspect Icon">
                     </div>
                     {% endfor %}
-                    <p><strong>{% if card.is_unique %} ⟡ <a href='/search?q="{{ card.name[:card.name.rfind(" ", 0, card.name.find("-"))] }}"'>{% endif %}{{ card.name }}{% if card.is_unique %}</a>{% endif %}</strong></p>
+                    <p><strong>{% if card.is_unique %} ⟡ <a href='/search?q="{{ card.name[:card.name.rfind(" ", 0, card.name.find("-"))] }}"' class='unique-title-link'>{% endif %}{{ card.name }}{% if card.is_unique %}</a>{% endif %}</strong></p>
                 </div>
 
             </div>
@@ -105,14 +105,14 @@
                 {% endif %}
                 {% if card.epic_action %}
                 <div class="card-epic-action"><span class='epic-action-text'>
-                    <p>{{ card.epic_action | safe }}</p></span>
+                    <p>{{ card.epic_action | replace_aspects | safe }}</p></span>
                 </div>
                 {% endif %}
 
                 <br />
                 <div class="card-type">
                     <p><span class="card-type-span">LEADER UNIT - {% if card.arenas %} {% for arena in card.arenas %}
-                        {{ arena|upper }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span>. Cost: <span class="cost-text">{{card.cost}}</span></p>
+                        {{ arena|upper }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span></p>
                 </div>
 
                 <div class="card-traits">
@@ -134,18 +134,11 @@
                 </div>
                 {% endif %}
 
-                <div class="card-stats">
-                    <p><span class="card-power">{{ card.power }}</span> / <span class="card-hp">{{card.hp}}</span></p>
-                    {% if card.upgrade_power %}
-                        <p><span class="card-power">{{ card.upgrade_power }}</span> / <span class="card-hp">{{card.upgrade_hp}}</span></p>
-                    {% endif %}
-                    
-                </div>
             {% else %}
                 <div class="card-type">
                 <p><span class="card-type-span">{{ card.type|upper }}{% if card.arenas %} - 
                     {% for arena in card.arenas %}
-                        {{ arena|upper }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span>{% if card.cost %}. Cost: <span class="cost-text">{{card.cost}}</span>.{% endif %}
+                        {{ arena|upper }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span>{% if card.cost %}{% endif %}
                 </p>
                 
 
@@ -168,60 +161,61 @@
                 {% endif %}
                 {% if card.epic_action %}
                 <div class="card-epic-action">
-                    <p>{{ card.epic_action | safe }}</p>
+                    <p>{{ card.epic_action | replace_aspects | safe }}</p>
                 </div>
                 {% endif %}
-                <div class="card-stats">
-                    {% if card.power %}
-                    <p><span class="card-power">{{ card.power }}</span> / <span class="card-hp">{{card.hp}}</span></p>
-                    {% if card.upgrade_power %}
-                        <p><span class="card-power">{{ card.upgrade_power }}</span> / <span class="card-hp">{{card.upgrade_hp}}</span></p>
-                    {% endif %}
-                    {% elif card.hp %}
-                    <p><span class="card-hp">Starting HP: {{card.hp}}</span></p>
-                    {% endif %}
-                </div>
-                
             {% endif %}
+            <div class="card-stats-container">
+                <div class="card-set">
+                    <div class="card-set-item">
+                        {% if card.cost %}
+                    <div class="card-set-title">Cost</div>
+                    <div class="card-set-text"><span class="cost-text">{{card.cost}}</div>
+                        {% endif %}
+                    </div>
+                    <div class="card-set-item">
+                        {% if card.power %}
+                        <div class="card-set-title">Power/HP</div>
+                        <div class="card-set-text"><span class="card-power">{{ card.power }}</span> / <span class="card-hp">{{card.hp}}</span></div>
+                        {% elif card.hp %}    
+                        <div class="card-set-title">HP</div>
+                        <div class="card-set-text"><span class="card-hp">{{card.hp}}</span></div>
+                        {% endif %}
+                    </div>
+                    <div class="card-set-item">
+                        {% if card.upgrade_power %}
+                    <div class="card-set-title">Upgrade Power/HP</div>
+                    <div class="card-set-text"><span class="card-power">{{ card.upgrade_power }}</span> / <span class="card-hp">{{card.upgrade_hp}}</span></div>
+                        {% endif %}
+                    </div>
+                </div> 
 
-            <div class="card-set">
-                <div class="card-set-item">
-                <div class="card-set-title">Set</div>
-                <div class="card-set-text"><a href="/search?q=set%3A{{ card.set }}&variants=true">{{ card.set_name }}</a></div>
-                </div>
-                <div class="card-set-item">
-                <div class="card-set-title">Card Number</div>
-                {% if card.number_display %}
-                <div class="card-set-text">{{ card.number_display }}/{{card.max_element}}</div>
-                {% else %}
-                <div class="card-set-text">{{ card.number }}/{{card.max_element}}</div>
-                {% endif%}
-                </div>
-                <div class="card-set-item">
-                <div class="card-set-title">Rarity</div>
-                <div class="card-set-text">{{ card.rarity }}</div>
-                </div>
-            </div> 
-            <div class="card-set">
-                <div class="card-set-item">
-                <div class="card-set-title">Artist</div>
-                <div class="card-set-text"><a href='/search?q=artist%3A"{{ card.artist|urlencode }}"'>{{ card.artist }}</a>
-                </div>
-                </div>
-                <!--<div class="card-set-item">
-                <div class="card-set-title">Card Number</div>
-                {% if card.number_display %}
-                <div class="card-set-text">{{ card.number_display }}/{{card.max_element}}</div>
-                {% else %}
-                <div class="card-set-text">{{ card.number }}/{{card.max_element}}</div>
-                {% endif%}
-                </div>
-                <div class="card-set-item">
-                <div class="card-set-title">Rarity</div>
-                <div class="card-set-text">{{ card.rarity }}</div>
-                </div>
-                !-->
-            </div> 
+                <div class="card-set">
+                    <div class="card-set-item">
+                    <div class="card-set-title">Set</div>
+                    <div class="card-set-text"><a href="/search?q=set%3A{{ card.set }}&variants=true">{{ card.set_name }}</a></div>
+                    </div>
+                    <div class="card-set-item">
+                    <div class="card-set-title">Card Number</div>
+                    {% if card.number_display %}
+                    <div class="card-set-text">{{ card.number_display }}/{{card.max_element}}</div>
+                    {% else %}
+                    <div class="card-set-text">{{ card.number }}/{{card.max_element}}</div>
+                    {% endif%}
+                    </div>
+                    <div class="card-set-item">
+                    <div class="card-set-title">Rarity</div>
+                    <div class="card-set-text">{{ card.rarity }}</div>
+                    </div>
+                </div> 
+                <div class="card-set">
+                    <div class="card-set-item">
+                    <div class="card-set-title">Artist</div>
+                    <div class="card-set-text"><a href='/search?q=artist%3A"{{ card.artist|urlencode }}"'>{{ card.artist }}</a>
+                    </div>
+                    </div>
+                </div> 
+            </div>
         </div>
     </div>
     {% if variants %}
@@ -268,11 +262,13 @@
     {% endif %}
     <div class="card-iterator-container">
         {% if prev_card.name %}
-            <a href="/card/{{ prev_card.set }}/{{ prev_card.number }}/{{ prev_card.name|replace('/', '-')|urlencode }}" class="button prev-link">{{ prev_card.name }}</a>
+            <a href="/card/{{ prev_card.set }}/{{ prev_card.number }}/{{ prev_card.name|replace('/', '-')|urlencode }}" class="button prev-link">{{ prev_card.name.split(' - ')[0] }}
+            </a>
         {% endif %}
         <a href="/search?q=set%3A{{ card.set }}&variants=true" class="button center-link">{{ card.set }}</a>
         {% if next_card.name %}
-            <a href="/card/{{ next_card.set }}/{{ next_card.number }}/{{ next_card.name|replace('/', '-')|urlencode }}" class="button next-link">{{ next_card.name }}</a>
+            <a href="/card/{{ next_card.set }}/{{ next_card.number }}/{{ next_card.name|replace('/', '-')|urlencode }}" class="button next-link">{{ next_card.name.split(' - ')[0] }}
+            </a>
         {% endif %}
     </div>
     

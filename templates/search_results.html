@@ -10,9 +10,9 @@
             <label for="view-mode-select">View</label>
             <select id="view-variants-select">
                 <option value="normal" {% if view_variants=='normal' %}selected{% endif %}>Normal</option>
-                <option value="hyperspace" {% if view_variants=='hyperspace' %}selected{% endif %}>Hyperspace</option>
-                <option value="showcase" {% if view_mode=='showcase' %}selected{% endif %}>Showcase</option>
-                <option value="all" {% if view_variants=='all' %}selected{% endif %}>All</option>
+                <option value="hyperspace" {% if view_variants=='hyperspace' or variant_mode=='h' %}selected{% endif %}>Hyperspace</option>
+                <option value="showcase" {% if view_mode=='showcase' or variant_mode=='s' %}selected{% endif %}>Showcase</option>
+                <option value="all" {% if view_variants=='all' or variant_mode=='a' %}selected{% endif %}>All</option>
             </select>
             <select id="view-mode-select">
                 <option value="images" {% if view_mode=='images' %}selected{% endif %}>Images</option>

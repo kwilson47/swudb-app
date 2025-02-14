@@ -873,6 +873,7 @@ def search():
     sort_field = request.args.get('sort')
     sort_order = request.args.get('sortOrder')
     display_mode = request.args.get('display_mode')
+    variant_mode = request.args.get('variant_mode')
     leader = request.args.get('leader')
     base = request.args.get('base')
     variants = request.args.get('variants')
@@ -886,7 +887,7 @@ def search():
         card.pop('back_text', None)
     # cards_json = json.dumps(cards, ensure_ascii=False, default=lambda x: None)
     # Pass the cards data to the template for rendering
-    return render_template('search_results.html', cards=cards, result_string=result_string, sort_field=sort_field, sort_order=sort_order, q=search_input, display_mode=display_mode, leader=leader, base=base)
+    return render_template('search_results.html', cards=cards, result_string=result_string, sort_field=sort_field, sort_order=sort_order, q=search_input, display_mode=display_mode, leader=leader, base=base, variant_mode=variant_mode)
 
 
 @app.route('/card/<string:set>/<string:number>/<string:name>')
@@ -1098,12 +1099,19 @@ def replace_aspects(text):
         power = match.group(1)
         # Return the replacement text
         return f'<span class="blue-text">{power}</span>'
+    
+    def replace_match(match):
+        trait = match.group(1)
+        return f'<b><i><a href="/search?q=trait%3A\'{trait}\'" class="trait-link">{trait}</a></i></b>'
 
     pattern = re.compile(r'\{([+-]?\d+)p\}')
     text = pattern.sub(replace_power_placeholder, text)
 
     pattern = re.compile(r'\{([+-]?\d+)h\}')
     text = pattern.sub(replace_hp_placeholder, text)
+
+    pattern = r"<b><i>(.*?)</i></b>"
+    text = re.sub(pattern, replace_match, text)
     
     return Markup(text)
 

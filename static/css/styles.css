@@ -317,11 +317,15 @@ p {
 .card-power {
     color: crimson;
     font-weight: bold;
+    font-size: x-large;
+    padding-right: 2px;
 }
 
 .card-hp {
     color: darkcyan;
     font-weight: bold;
+    font-size: x-large;
+    padding-left: 2px;
 }
 
 .aspect-icon img {
@@ -441,6 +445,7 @@ p {
 .cost-text {
     color: goldenrod;
     font-weight: bold;
+    font-size: x-large;
 }
 
 .power-text {
@@ -623,6 +628,7 @@ code {
     display: flex;
     justify-content: space-between;
     padding: 100px;
+    align-items: center;
 }
 
 .button {
@@ -1180,4 +1186,49 @@ code {
     border-radius: 7.5px;
     border-color: red;
     margin-top: 10px;
+}
+
+.unique-title-link {
+    text-decoration: none;
+}
+
+.card-stats-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Ensures 3 equal columns */
+    gap: 10px;
+    width: 100%;
+    border-top: 1px black dotted;
+}
+
+.card-set {
+    display: contents;
+}
+
+.card-set-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+/* Ensures headers have the same height */
+.card-set-title {
+    min-height: 2.5em; /* Adjust as needed */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-weight: bold;
+}
+
+/* Ensures values are aligned properly */
+.card-set-text {
+    min-height: 3.5em; /* Ensures text fields remain aligned */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.trait-link {
+    color: black;
 }
