@@ -1,71 +1,113 @@
-// document.addEventListener('DOMContentLoaded', function () {
-//     var cardRows = document.querySelectorAll('.card-row');
-//     cardRows.forEach(function (cardRow) {
-//       var cardImage = cardRow.querySelector('.hover-card-image');
-//       var offSetX = 200;
-//       var offSetY = 220;
-  
-//       function hideImage() {
-//         cardImage.style.display = 'none';
+ 
+// function buildUpdatedVariantsURL(variantField, selectedDisplayMode) {
+//   const currentURL = new URL(window.location.href);
+//   let updatedURL;
+//   let queryParams = new URLSearchParams(currentURL.search);
+
+//   // Modify the 'q' parameter to append 'variant' parameter
+//   let qParam = queryParams.get('q');
+//   if (qParam) {
+//     // Check if 'variant' already exists within 'q' parameter
+//     const variantRegex = /variant:[^&+]+/g;
+//     if (variantRegex.test(qParam)) {
+//       if (variantField === 'n') {
+//         // Remove 'variant' part entirely if 'n' is selected
+//         qParam = qParam.replace(variantRegex, '').replace(/\+and\+$/, '');
+//       } else {
+//         // Replace existing 'variant' part with new value
+//         qParam = qParam.replace(variantRegex, `variant:${variantField}`);
 //       }
-  
-//       function showImage(event) {
-//         var mouseX = event.clientX;
-//         var mouseY = event.clientY;
-    
-//         cardImage.style.left = (mouseX + offSetX) + 'px';
-//         cardImage.style.top = (mouseY + offSetY) + 'px';
-//         cardImage.style.display = 'block';
-//       }
-  
-//       cardRow.addEventListener('mouseenter', showImage);
-//       cardRow.addEventListener('mousemove', showImage);
-//       cardRow.addEventListener('mouseleave', hideImage);
-//     });
-  
-//     // Hide the image when the page loads
-//     var cardImages = document.querySelectorAll('.hover-card-image');
-//     cardImages.forEach(function (cardImage) {
-//       cardImage.style.display = 'none';
-//     });
-  
-//     // Hide the image when the back button is clicked
-//     window.addEventListener('pageshow', function (event) {
-//       if (event.persisted) {
-//         cardImages.forEach(function (cardImage) {
-//           cardImage.style.display = 'none';
-//         });
-//       }
-//     });
-//   });
-  
+//     } else {
+//       // Append 'variant' part to existing 'q' parameter
+//       qParam += `+and+variant:${variantField}`;
+//     }
+//   } else {
+//     // Set 'q' parameter with 'variant' part
+//     qParam = `variant:${variantField}`;
+//   }
+
+//   queryParams.set('q', qParam);
+//   queryParams.set('variants', variantField);
+//   currentURL.search = decodeURIComponent(queryParams.toString());
+
+//   return currentURL.toString();
+// }
+
 function buildUpdatedVariantsURL(variantField, selectedDisplayMode) {
   const currentURL = new URL(window.location.href);
-  let updatedURL;
-  let queryParams = new URLSearchParams(currentURL.search);
+  const baseURL = `${currentURL.origin}${currentURL.pathname}`;
 
-  // Modify the 'q' parameter to append 'variant' parameter
-  let qParam = queryParams.get('q');
+  // Retrieve and clean up the query parameters
+  let qParam = currentURL.searchParams.get('q');
+  console.log("Initial qParam:", qParam);
+
   if (qParam) {
-    // Check if 'variant' already exists within 'q' parameter
-    const variantRegex = /variant:[^&+]+/g;
-    if (variantRegex.test(qParam)) {
-      // Replace existing 'variant' part with new value
-      qParam = qParam.replace(variantRegex, `variant:${variantField}`);
-    } else {
-      // Append 'variant' part to existing 'q' parameter
-      qParam += `+and+variant:${variantField}`;
+    // First, decode any URL encoding, so we can work with actual '+' signs
+    qParam = decodeURIComponent(qParam);
+    console.log("After decoding qParam:", qParam);
+
+    // Remove the existing variant part from the qParam if it's there
+    const variantRegex = /(?:\+and\+)?variant:[^&+]+/g;
+    qParam = qParam.replace(variantRegex, '').trim();
+    console.log("After variant removal:", qParam);
+
+    // Remove any leftover '+and+' or 'and' (encoded and plain)
+    qParam = qParam.replace(/(?:\+and\+|and)/g, '').trim();
+    console.log("After cleanup of +and+:", qParam);
+
+    // If variantField is 'n', just remove +and+ from qParam if it exists
+    if (variantField === 'n') {
+      qParam = qParam.replace(/(?:\+and\+|and)/g, '').trim();
+      console.log("After removing +and+ due to 'n':", qParam);
+    } else if (variantField !== 'n') {
+      // Add the new variant if it's not 'n'
+      if (qParam) {
+        qParam += `+and+variant:${variantField}`;
+      } else {
+        qParam = `variant:${variantField}`;
+      }
     }
-  } else {
-    // Set 'q' parameter with 'variant' part
+
+    console.log("After adding variant:", qParam);
+  } else if (variantField !== 'n') {
     qParam = `variant:${variantField}`;
   }
 
-  queryParams.set('q', qParam);
-  currentURL.search = decodeURIComponent(queryParams.toString());
+  // Construct the query string manually with + as the separator
+  let queryParams = new URLSearchParams(currentURL.searchParams);
+  if (qParam && qParam.trim()) {
+    queryParams.set('q', qParam);
+  } else {
+    queryParams.delete('q');
+  }
 
-  return currentURL.toString();
+  queryParams.set('variants', variantField);
+
+  // Manually encode the query string, leaving the '+' intact
+  let queryString = queryParams.toString().replace(/%20/g, '+').replace(/%2B/g, '+');
+  console.log("Manually encoded query string:", queryString);
+
+  // Rebuild the URL with the updated query string
+  const updatedURL = `${baseURL}?${queryString}`;
+  console.log("Updated URL:", updatedURL);
+
+  return updatedURL;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
   
   
@@ -82,8 +124,20 @@ function buildUpdatedVariantsURL(variantField, selectedDisplayMode) {
 
     if (selectedVariant == 'hyperspace') {
       selectedVariant = 'h'
+    }  else if (selectedVariant == 'foil') {
+      selectedVariant = 'f'
     } else if (selectedVariant == 'showcase') {
       selectedVariant = 's'
+    } else if (selectedVariant == 'prestige') {
+      selectedVariant = 'p'
+    } else if (selectedVariant == 'normal') {
+      selectedVariant = 'n'
+    } else if (selectedVariant == 'hyperspace-foil') {
+      selectedVariant = 'y'
+    } else if (selectedVariant == 'prestige-foil') {
+      selectedVariant = 'r'
+    } else if (selectedVariant == 'prestige-serialized') {
+      selectedVariant = 'e'
     }
   
     // Build the updated URL
@@ -205,6 +259,37 @@ function buildUpdatedVariantsURL(variantField, selectedDisplayMode) {
       // updateDisplay();
     }
 
+    switch(searchParams.get('variants')){
+      case 'f':
+        variantModeSelect.value = 'foil';
+        break;
+      case 'n':
+        variantModeSelect.value = 'normal';
+        break;
+      case 'h':
+        variantModeSelect.value = 'hyperspace';
+        break;
+      case 'hf':
+        variantModeSelect.value = 'hyperspace foil';
+        break;
+      case 's':
+        variantModeSelect.value = 'showcase';
+        break;
+      case 'p':
+        variantModeSelect.value = 'prestige';
+        break;
+      case 'r':
+        variantModeSelect.value = 'prestige-foil';
+        break;
+      case 'e':
+        variantModeSelect.value = 'prestige-serialized';
+        break;
+      case 'all':
+        variantModeSelect.value = 'all';
+        break;
+    }
+    
+
     //Hide the image when the page loads
     var cardImages = document.querySelectorAll('.hover-card-image');
     cardImages.forEach(function (cardImage) {
@@ -227,7 +312,7 @@ function buildUpdatedVariantsURL(variantField, selectedDisplayMode) {
       "language": {
         "search": "Filter results:"
       },
-      "order": [[2, 'asc']],
+      "order": [[1, 'asc']],
       "scrollX": true,
       'aoColumnDefs': [ 
     // {

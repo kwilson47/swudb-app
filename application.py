@@ -30,6 +30,7 @@ else:
 aws_region = 'us-east-1'
 # dynamodb_table = os.environ.get('SWU_DB_TABLE')
 dynamodb_table = 'Cards3'
+# dynamodb_table = 'Cards-Backup-2'
 dynamodb = session.client('dynamodb',
                         region_name=aws_region)
 
@@ -102,7 +103,7 @@ def get_next_card(set_id, card_number):
 
 
 def get_previous_card(set_id, card_number):
-
+    print(card_number)
     response = dynamodb.query(
         TableName=dynamodb_table,
         KeyConditionExpression='setId = :set_id and cardNumber < :card_number',
@@ -125,7 +126,7 @@ def get_previous_card(set_id, card_number):
 
 
 
-def search_cards(search_input, sort_field='name', sort_order='asc', leader='', base='', include_variants=False):
+def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader='', base='', include_variants=False):
     """
     Search the Cards table using the input provided by the user
     Return any matching cards, in the manner specified by sort_field and sort_order
@@ -138,6 +139,7 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
     include_all = False
 
     result_string = ""
+    print("sort field ", sort_field)
 
     for char in search_input:
         if char == " " and not quote_stack:
@@ -315,6 +317,15 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
             elif attribute_name == 'c':
                 attribute_name = 'cost'
                 result_string += " the cost " 
+            elif attribute_name == 'pc':
+                attribute_name = 'pilotCost'
+                result_string += " the pilot cost " 
+            elif attribute_name == 'up':
+                attribute_name = 'upgradePower'
+                result_string += " the upgrade power " 
+            elif attribute_name == 'uh':
+                attribute_name = 'upgradeHP'
+                result_string += " the upgrade HP " 
 
             result_string += comparison_operator + " " + attribute_value
             filter_expression += construct_filter_expression(
@@ -323,7 +334,7 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
                 attribute_name, attribute_value))
             expression_attribute_names.update(
                 construct_expression_attribute_name(attribute_name))
-
+        
         else:
             match = re.search(r'\b(?:t|text):(.+)', expression)
             trait = re.search(r'\b(?:tr|trait):(.+)', expression)
@@ -334,6 +345,7 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
             artist = re.search(r'\b(?:art|artist):(.+)', expression)
             name = re.search(r'(?:name|title):(.+)', expression)
             variant = re.search(r'(?:variant|v):(.+)', expression)
+            keyword = re.search(r'\b(?:k|keyword):(.+)', expression)
 
             if match:
                 attribute_name = 'searchText'
@@ -355,6 +367,20 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
                 #     attribute_name, attribute_value, is_numeric=False))
                 # expression_attribute_names.update(
                 #     construct_expression_attribute_name(attribute_name))
+            elif keyword:
+                attribute_name = 'keywordsText'
+                comparison_operator = 'contains'
+                attribute_value = keyword.group(1).lower()
+                result_string += " the keyword is " + attribute_value
+
+                # Use a unique placeholder for each value
+                placeholder_name = f"#{attribute_name}_{counter}"
+                value_placeholder = f":{attribute_name}_{counter}"
+
+                # filter_expressions.append(f"contains({placeholder_name}, {value_placeholder})")
+                filter_expression += f"contains ({placeholder_name}, {value_placeholder})"
+                expression_values.update(construct_expression_value(attribute_name + f"_{counter}", attribute_value, is_numeric=False))
+                expression_attribute_names.update({placeholder_name: attribute_name})
             elif artist:
                 attribute_name = 'artistSearch'
                 comparison_operator = 'contains'
@@ -430,36 +456,54 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
                     construct_expression_attribute_name(attribute_name))
             elif variant:
                 attribute_name = 'variantType'
+                print(expression)
                 attribute_value = expression.split(':', 1)[1].strip().upper()
-                result_string += " the variant includes " + attribute_value
                 if attribute_value == 'H':
                     attribute_value = "Hyperspace"
                     include_all = True
                 elif attribute_value == 'S':
                     attribute_value = "Showcase"
                     include_all = True
+                elif attribute_value == 'F':
+                    attribute_value = "Foil"
+                    include_all = True
+                elif attribute_value == 'P':
+                    attribute_value = "Prestige"
+                    include_all = True
+                elif attribute_value == 'Y':
+                    attribute_value = "Hyperspace Foil"
+                    include_all = True
+                elif attribute_value == 'R':
+                    attribute_value = "Prestige Foil"
+                    include_all = True
+                elif attribute_value == 'E':
+                    attribute_value = "Prestige Serialized"
+                    include_all = True
                 elif attribute_value == "A" or attribute_value == "ALL":
                     include_all = True
+                    result_string += " the variant is " + attribute_value
                     continue
+
+                result_string += " the variant is " + attribute_value
 
                 if include_all == False:
                     attribute_placeholder = attribute_name + '_' + attribute_value
                     attribute_placeholder = re.sub(r'[ "\']', '_', attribute_placeholder)
-                    comparison_operator = 'contains'
-                    filter_expression += f"contains (#{attribute_name}, :{attribute_placeholder})"
+                    comparison_operator = '='
+                    filter_expression += f"#{attribute_name} = :{attribute_name}"
                     
                     expression_values.update(construct_expression_value(
-                        attribute_placeholder, attribute_value, is_numeric=False))
+                        attribute_name, attribute_value, is_numeric=False))
                     expression_attribute_names.update(
                         construct_expression_attribute_name(attribute_name))
                 else:
                     attribute_placeholder = attribute_name + '_' + attribute_value
                     attribute_placeholder = re.sub(r'[ "\']', '_', attribute_placeholder)
-                    comparison_operator = 'contains'
-                    filter_expression += f"contains (#{attribute_name}, :{attribute_placeholder})"
+                    comparison_operator = '='
+                    filter_expression += f"#{attribute_name} = :{attribute_name}"
                     
                     expression_values.update(construct_expression_value(
-                        attribute_placeholder, attribute_value, is_numeric=False))
+                        attribute_name, attribute_value, is_numeric=False))
                     expression_attribute_names.update(
                         construct_expression_attribute_name(attribute_name))
             elif name:
@@ -615,7 +659,7 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
     search_expressions.append(search_input)
 
     reverse_order = sort_order == 'desc'
-    if (sort_field == None) or (sort_field == 'name'):
+    if (sort_field == 'name'):
         sorted_cards = sorted(cards, key=lambda x: x.get(
             'name', 0), reverse=reverse_order)
     elif (sort_field in ['power', 'cost', 'hp']):
@@ -623,12 +667,13 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
         #     print(card['hp'])
         sorted_cards = sorted(cards, key=lambda x: int(
             x.get(sort_field, 0) or 0), reverse=reverse_order)
-    elif (sort_field == 'setnumber'):
+    elif (sort_field == 'setnumber' or sort_field == None):
         if reverse_order:
             sorted_cards = cards
             sorted_cards.reverse()
         else:
             sorted_cards = cards
+            print("hle")
     elif (sort_field == 'type'):
         sorted_cards = sorted(cards, key=lambda x: x.get(
             'type', 0), reverse=reverse_order)
@@ -655,16 +700,42 @@ def search_cards(search_input, sort_field='name', sort_order='asc', leader='', b
     return sorted_cards, search_description, leader_card, base_card
 
 
+# def parse_numerical_expression(expression):
+#     # Use regular expressions to extract attribute name, comparison operator, and value
+#     match = re.match(r'([pchaPCHA])((?:<=|>=|<|>|=|!=|:)?)(\w+)', expression)
+#     attribute_name = match.group(1).lower()
+#     comparison_operator = match.group(2)
+#     attribute_value = match.group(3)
+#     if comparison_operator == '!=':
+#         comparison_operator = '<>'
+#     return attribute_name, comparison_operator, attribute_value
+
 def parse_numerical_expression(expression):
-    # Use regular expressions to extract attribute name, comparison operator, and value
-    match = re.match(r'([pchaPCHA])((?:<=|>=|<|>|=|!=|:)?)(\w+)', expression)
+    # Define allowed attribute names, sorted by length (longest first)
+    allowed_attributes = ["pc", "up", "uh", "c", "h", "p", "a"]
+    
+    # Construct regex dynamically with sorted attributes
+    attribute_pattern = r'\b(' + '|'.join(allowed_attributes) + r')\b'
+    regex_pattern = rf'^({"|".join(allowed_attributes)})\s*(<=|>=|<|>|=|!=|:)\s*(\w+)$'
+    
+    # Match using regex
+    match = re.match(regex_pattern, expression, re.IGNORECASE)
+    
+    if not match:
+        raise ValueError("Invalid expression format")
+    
     attribute_name = match.group(1).lower()
     comparison_operator = match.group(2)
     attribute_value = match.group(3)
+
+    print("attribute_name ", attribute_name)
+    print("comparison_operator ", comparison_operator)
+    print("attribute_value ", attribute_value)
+
     if comparison_operator == '!=':
         comparison_operator = '<>'
-    return attribute_name, comparison_operator, attribute_value
 
+    return attribute_name, comparison_operator, attribute_value
 
 def construct_filter_expression(attribute_name, comparison_operator):
     # Construct the filter expression based on the attribute name and comparison operator
@@ -738,7 +809,7 @@ def process_item(item, set_info = None):
     variant_type = item.get('variantType', {}).get('S', 'Original')
     card_set = item['setId']['S']
 
-    front_art = 'https://cdn.swu-db.com/images/cards/' + card_set + '/' + number + '.png' 
+    front_art = 'https://cdn.swu-db.com/images/cards/' + card_set + '/' + number.rstrip("F") + '.png' 
 
     display_price = item.get('displayPrice', {}).get('N', 0)
     url = item.get('url', {}).get('S', None)
@@ -777,7 +848,7 @@ def process_item(item, set_info = None):
     
     has_back = item['hasBack']['BOOL']
     if has_back:
-        back_art = 'https://cdn.swu-db.com/images/cards/' + card_set + '/' + number + '-b.png'
+        back_art = 'https://cdn.swu-db.com/images/cards/' + card_set + '/' + number.rstrip("F") + '-b.png'
     else:
         back_art = None
     power = item.get('printedPower', {}).get('S', None)
@@ -798,7 +869,7 @@ def process_item(item, set_info = None):
     is_landscape = item.get('isLandscape', {}).get('BOOL', False)
 
     if is_landscape:
-        v_front_art = 'https://cdn.swu-db.com/images/cards/' + card_set + '/' + number + '-r.png'
+        v_front_art = 'https://cdn.swu-db.com/images/cards/' + card_set + '/' + number.rstrip("F") + '-r.png'
     else:
         v_front_art = None
     aspect_icons = []
@@ -890,15 +961,27 @@ def search():
     return render_template('search_results.html', cards=cards, result_string=result_string, sort_field=sort_field, sort_order=sort_order, q=search_input, display_mode=display_mode, leader=leader, base=base, variant_mode=variant_mode)
 
 
-@app.route('/card/<string:set>/<string:number>/<string:name>')
-def card(set, number, name):
+# @app.route('/card/<string:set>/<string:number>/<string:name>')
+# def card(set, number, name):
+#     # Retrieve card information based on the set, number, and name
+#     # Render the card page template with the retrieved card information
+#     print(number)
+#     my_card = get_card(set, number)
+#     next_card = get_next_card(set, number)
+#     prev_card = get_previous_card(set, number)
+#     variants = get_variants(my_card["variants"])
+#     return render_template('card.html', set=set, number=number, name=name, card=my_card, next_card=next_card, prev_card=prev_card, variants=variants)
+
+@app.route('/card/<string:set>/<string:number>')
+def card(set, number):
     # Retrieve card information based on the set, number, and name
     # Render the card page template with the retrieved card information
+    print(number)
     my_card = get_card(set, number)
     next_card = get_next_card(set, number)
     prev_card = get_previous_card(set, number)
     variants = get_variants(my_card["variants"])
-    return render_template('card.html', set=set, number=number, name=name, card=my_card, next_card=next_card, prev_card=prev_card, variants=variants)
+    return render_template('card.html', set=set, number=number, name=my_card['name'], card=my_card, next_card=next_card, prev_card=prev_card, variants=variants)
 
 # @app.route('/submit-feedback', methods=['POST'])
 # def submit_feedback():

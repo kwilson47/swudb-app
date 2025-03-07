@@ -10,19 +10,25 @@
             <label for="view-mode-select">View</label>
             <select id="view-variants-select">
                 <option value="normal" {% if view_variants=='normal' %}selected{% endif %}>Normal</option>
+                <option value="foil" {% if view_variants=='foil' %}selected{% endif %}>Foil</option>
                 <option value="hyperspace" {% if view_variants=='hyperspace' or variant_mode=='h' %}selected{% endif %}>Hyperspace</option>
+                <option value="hyperspace-foil" {% if view_variants=='hyperspace-foil' or variant_mode=='y' %}selected{% endif %}>Hyperspace Foil</option>
                 <option value="showcase" {% if view_mode=='showcase' or variant_mode=='s' %}selected{% endif %}>Showcase</option>
+                <option value="prestige" {% if view_mode=='prestige' or variant_mode=='p' %}selected{% endif %}>Prestige</option>
+                <option value="prestige-foil" {% if view_mode=='prestige-foil' or variant_mode=='r' %}selected{% endif %}>Prestige Foil</option>
+                <option value="prestige-serialized" {% if view_mode=='prestige-serialized' or variant_mode=='e' %}selected{% endif %}>Prestige Serialized</option>
                 <option value="all" {% if view_variants=='all' or variant_mode=='a' %}selected{% endif %}>All</option>
             </select>
             <select id="view-mode-select">
-                <option value="images" {% if view_mode=='images' %}selected{% endif %}>Images</option>
                 <option value="checklist" {% if view_mode=='checklist' %}selected{% endif %}>Checklist</option>
+                <option value="images" {% if view_mode=='images' %}selected{% endif %}>Images</option>
             </select>
         </div>
 
         <div class="sort-section">
             <label for="sort-select">sorted by</label>
             <select id="sort-select" name="sort-field">
+                <option value="1" {% if sort_field=='setnumber' %}selected{% endif %}>Set/Number</option>
                 <option value="2" {% if sort_field=='name' %}selected{% endif %}>Name</option>
                 <option value="4" {% if sort_field=='type' %}selected{% endif %}>Type</option>
                 <option value="5" {% if sort_field=='arenas' %}selected{% endif %}>Arena</option>
@@ -32,7 +38,7 @@
                 <option value="6" {% if sort_field=='cost' %}selected{% endif %}>Cost</option>
                 <option value="9" {% if sort_field=='traits' %}selected{% endif %}>Traits</option>
                 <option value="10" {% if sort_field=='rarity' %}selected{% endif %}>Rarity</option>
-                <option value="1" {% if sort_field=='setnumber' %}selected{% endif %}>Set/Number</option>
+                
                 <option value="11" {% if sort_field=='artist' %}selected{% endif %}>Artist</option>
                 <option value="13" {% if sort_field=='price' %}selected{% endif %}>Price</option>
                 {% if leader.name %}
@@ -111,7 +117,7 @@
                     <td class="table-cell">{{ card.set }}</td>
                     <td class="table-cell">{{ card.number }}</td>
                     <td class="table-cell"
-                    onclick="window.location.href='/card/{{ card.set }}/{{ card.number }}/{{ card.name|replace('/', '-')|urlencode }}'"><span class="card-link">{{ card.name }}</span></td>
+                    onclick="window.location.href='/card/{{ card.set }}/{{ card.number }}'"><span class="card-link">{{ card.name }}</span></td>
                     <td data-sort=" {% for aspect in card.aspects %}{{ aspect }}{% endfor %}">
                         <div class="aspect-icons">
                             {% for aspect_icon in card.aspect_icons %}
@@ -169,8 +175,7 @@
             data-traits="{{ card.traits|join('|')|default('') }}"
             data-aspects="{{ card.aspects|join('|')|default('') }}">
                 {% if card.has_back %}
-                <a href="{{ url_for('card', set=card.set, number=card.number, name=card.name|replace(' ', '-')|replace('\"', '
-                    -')|replace('/', '-' )) }}">
+                <a href="{{ url_for('card', set=card.set, number=card.number) }}">
                     <img {% if card.is_landscape %}src="{{ card.v_front_art }}" {% else %}src="{{ card.front_art }}" {%
                         endif %} alt="Card Image" {% if card.is_landscape %}data-front-image="{{ card.v_front_art }}" {%
                         else %}data-front-image="{{ card.front_art }}" {% endif %} data-back-image="{{ card.back_art }}"
@@ -178,8 +183,7 @@
                 </a>
                 <button class="toggle-button"></button>
                 {% else %}
-                <a href="{{ url_for('card', set=card.set, number=card.number, name=card.name|replace(' ', '-')|replace('\"', '
-                    -')|replace('/', '-' )) }}">
+                <a href="{{ url_for('card', set=card.set, number=card.number) }}">
                     <img {% if card.is_landscape %}src="{{ card.v_front_art }}" {% else %}src="{{ card.front_art }}" {%
                         endif %} alt="Card Image" class="card-image">
                 </a>

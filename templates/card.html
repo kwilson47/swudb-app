@@ -73,7 +73,7 @@
                         <img src="{{ aspect_icon }}" alt="Aspect Icon">
                     </div>
                     {% endfor %}
-                    <p><strong>{% if card.is_unique %} ⟡ <a href='/search?q="{{ card.name[:card.name.rfind(" ", 0, card.name.find("-"))] }}"' class='unique-title-link'>{% endif %}{{ card.name }}{% if card.is_unique %}</a>{% endif %}</strong></p>
+                    <p><strong>{% if card.is_unique %} ⟡ <a href='/search?q="{{ card.name[:card.name.rfind(" ", 0, card.name.rfind("-"))] }}"' class='unique-title-link'>{% endif %}{{ card.name }}{% if card.is_unique %}</a>{% endif %}</strong></p>
                 </div>
 
             </div>
@@ -214,6 +214,11 @@
                     <div class="card-set-text"><a href='/search?q=artist%3A"{{ card.artist|urlencode }}"'>{{ card.artist }}</a>
                     </div>
                     </div>
+                    <div class="card-set-item">
+                        <div class="card-set-title">Variant</div>
+                        <div class="card-set-text">{{ card.variant_type }}
+                        </div>
+                        </div>
                 </div> 
             </div>
         </div>
@@ -229,8 +234,7 @@
         <h4 style="text-align: center;">{{ variant.variant_type }}</h4>
         <div class="card-img variant-img">
                 {% if variant.has_back %}
-                <a href="{{ url_for('card', set=variant.set, number=variant.number, name=variant.name|replace(' ', '-')|replace('\"', '
-                    -')|replace('/', '-' )) }}">
+                <a href="{{ url_for('card', set=variant.set, number=variant.number) }}">
                     <img {% if variant.is_landscape %}src="{{ variant.v_front_art }}" {% else %}src="{{ variant.front_art }}" {%
                         endif %} alt="Card Image" {% if variant.is_landscape %}data-front-image="{{ variant.v_front_art }}" {%
                         else %}data-front-image="{{ variant.front_art }}" {% endif %} data-back-image="{{ variant.back_art }}"
@@ -238,8 +242,9 @@
                 </a>
                 <button class="toggle-button"></button>
                 {% else %}
-                <a href="{{ url_for('card', set=variant.set, number=variant.number, name=variant.name|replace(' ', '-')|replace('\"', '
+              <!--  <a href="{{ url_for('card', set=variant.set, number=variant.number, name=variant.name|replace(' ', '-')|replace('\"', '
                     -')|replace('/', '-' )) }}">
+              -->    <a href="{{ url_for('card', set=variant.set, number=variant.number) }}">
                     <img {% if variant.is_landscape %}src="{{ variant.v_front_art }}" {% else %}src="{{ variant.front_art }}" {%
                         endif %} alt="Card Image" class="card-image">
                 </a>
@@ -262,12 +267,12 @@
     {% endif %}
     <div class="card-iterator-container">
         {% if prev_card.name %}
-            <a href="/card/{{ prev_card.set }}/{{ prev_card.number }}/{{ prev_card.name|replace('/', '-')|urlencode }}" class="button prev-link">{{ prev_card.name.split(' - ')[0] }}
+            <a href="/card/{{ prev_card.set }}/{{ prev_card.number }}" class="button prev-link">{{ prev_card.name.split(' - ')[0] }}
             </a>
         {% endif %}
         <a href="/search?q=set%3A{{ card.set }}&variants=true" class="button center-link">{{ card.set }}</a>
         {% if next_card.name %}
-            <a href="/card/{{ next_card.set }}/{{ next_card.number }}/{{ next_card.name|replace('/', '-')|urlencode }}" class="button next-link">{{ next_card.name.split(' - ')[0] }}
+            <a href="/card/{{ next_card.set }}/{{ next_card.number }}" class="button next-link">{{ next_card.name.split(' - ')[0] }}
             </a>
         {% endif %}
     </div>
