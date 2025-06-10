@@ -983,18 +983,18 @@ def card(set, number):
     variants = get_variants(my_card["variants"])
     return render_template('card.html', set=set, number=number, name=my_card['name'], card=my_card, next_card=next_card, prev_card=prev_card, variants=variants)
 
-# @app.route('/submit-feedback', methods=['POST'])
-# def submit_feedback():
-#     message = request.form.get('message')
+@app.route('/submit-feedback', methods=['POST'])
+def submit_feedback():
+    message = request.form.get('message')
 
-#     # Process the feedback data, e.g., publish to SNS
-#     publish_feedback_to_sns(message)
+    # Process the feedback data, e.g., publish to SNS
+    publish_feedback_to_sns(message)
 
-#     # Flash a success message
-#     flash('Your feedback has been submitted successfully!', 'success')
+    # Flash a success message
+    flash('Your feedback has been submitted successfully!', 'success')
 
-#     # Redirect to the homepage after successful submission
-#     return redirect(url_for('homepage'))
+    # Redirect to the homepage after successful submission
+    return redirect(url_for('homepage'))
 
 @app.route('/syntax')
 def syntax():
@@ -1005,9 +1005,9 @@ def api():
     return render_template('api.html')
 
 
-# @app.route('/feedback')
-# def feedback():
-#     return render_template('feedback.html')
+@app.route('/feedback')
+def feedback():
+    return render_template('feedback.html')
 
 @app.route('/resources')
 def resources():
@@ -1163,7 +1163,7 @@ def replace_aspects(text):
 
     keywords = ['Smuggle', 'Bounties', 'Ambush', 'Bounty', 'Overwhelm', 'Sentinel', 'Shielded', 'Raid 3', 'Saboteur', 'Grit',
     'Restore 2', 'Restore 1', 'Raid 2', 'Exploit 2', 'Coordinate', 'Exploit 1', 'Exploit 3', 'Exploit 4', 'Raid 1', 'Restore 3', 'Piloting', 'Keywords', 'Keyword', 'Hidden',
-    'Raid']
+    'Raid', 'Restore', 'Restore 4']
 
     for keyword in keywords:
         placeholder = '{' + keyword + '}'
