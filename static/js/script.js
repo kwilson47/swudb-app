@@ -15,6 +15,19 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   });
+
+  // Prevent empty navbar searches; show a small toast instead of navigating
+  const navbarSearchForm = document.querySelector('form.bd-search');
+  if (navbarSearchForm) {
+    navbarSearchForm.addEventListener('submit', function (e) {
+      const qInput = navbarSearchForm.querySelector('input[name="q"]');
+      const qVal = (qInput && qInput.value ? qInput.value : '').trim();
+      if (!qVal) {
+        e.preventDefault();
+        showToast('Please enter a search query');
+      }
+    });
+  }
 });
 
 $(document).ready(function(){
@@ -181,3 +194,26 @@ function initializeButtons() {
 
 // Call initializeButtons function once during initialization
 initializeButtons();
+
+// Show a Bootstrap toast with a message (fallback to alert if Bootstrap not ready)
+function showToast(message) {
+  var toastEl = document.getElementById('globalToast');
+  if (!toastEl) {
+    // Fallback
+    alert(message);
+    return;
+  }
+  var body = toastEl.querySelector('.toast-body');
+  if (body) {
+    body.textContent = message;
+  }
+  // If Bootstrap JS is loaded, use it; otherwise, fallback
+  if (window.bootstrap && bootstrap.Toast) {
+    var t = bootstrap.Toast.getOrCreateInstance(toastEl);
+    t.show();
+  } else {
+    // Minimal manual show/hide
+    toastEl.classList.add('show');
+    setTimeout(function() { toastEl.classList.remove('show'); }, 2000);
+  }
+}

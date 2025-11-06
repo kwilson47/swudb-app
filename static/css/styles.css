@@ -172,6 +172,25 @@ p {
     width: auto;
 } */
 
+/* Sets page table spacing and layout */
+#setsTable {
+    width: 100% !important;
+    table-layout: auto;
+}
+
+#setsTable th,
+#setsTable td {
+    padding: 10px 14px; /* More breathing room */
+    vertical-align: middle;
+}
+
+@media (min-width: 992px) {
+    #setsTable th,
+    #setsTable td {
+        padding: 12px 18px;
+    }
+}
+
 .table-cell {
     text-align: left;
     padding: 5px;
