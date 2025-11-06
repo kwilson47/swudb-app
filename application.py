@@ -341,6 +341,8 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
             type = re.search(r'\b(?:ty|type):(.+)', expression)
             arena = re.search(r'\b(?:ar|arena):(.+)', expression)
             rarity = re.search(r'\b(?:r|rarity):(.+)', expression)
+            event = re.search(r'\b(?:event):(.+)', expression)
+            source = re.search(r'\b(?:source):(.+)', expression)
             card_set = re.search(r'\b(?:s|set):(.+)', expression)
             artist = re.search(r'\b(?:art|artist):(.+)', expression)
             name = re.search(r'(?:name|title):(.+)', expression)
@@ -397,6 +399,33 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
                 attribute_value = expression.split(':', 1)[1].strip().upper()
                 result_string += " the set is " + attribute_value
                 # filter_expression += f"contains (#{attribute_name}, :{attribute_name})"
+                filter_expression += f"#{attribute_name} = :{attribute_name}"
+                expression_values.update(construct_expression_value(
+                    attribute_name, attribute_value, is_numeric=False))
+                expression_attribute_names.update(
+                    construct_expression_attribute_name(attribute_name))
+            elif event:
+                attribute_name = 'eventType'
+                # Support both underscore and space forms (e.g., planetary_qualifier vs planetary qualifier)
+                raw_val = expression.split(':', 1)[1].strip()
+                av = raw_val.lower()
+                av_space = av.replace('_', ' ')
+                av_underscore = av.replace(' ', '_')
+                pretty_val = av_space
+                result_string += " the event is " + pretty_val
+                # Use OR to match either stored form
+                ph_space = f":{attribute_name}_{counter}_space"
+                ph_underscore = f":{attribute_name}_{counter}_underscore"
+                filter_expression += f"(#{attribute_name} = {ph_space} OR #{attribute_name} = {ph_underscore})"
+                expression_values[ph_space] = {'S': av_space}
+                expression_values[ph_underscore] = {'S': av_underscore}
+                expression_attribute_names.update(
+                    construct_expression_attribute_name(attribute_name))
+            elif source:
+                attribute_name = 'sourceSetId'
+                comparison_operator = '='
+                attribute_value = expression.split(':', 1)[1].strip().upper()
+                result_string += " the source set is " + attribute_value
                 filter_expression += f"#{attribute_name} = :{attribute_name}"
                 expression_values.update(construct_expression_value(
                     attribute_name, attribute_value, is_numeric=False))
@@ -939,7 +968,9 @@ def homepage():
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
-    search_input = request.args.get('q')
+    search_input = request.args.get('q', '')
+    if not search_input or not search_input.strip():
+        return redirect(url_for('homepage'))
     search_input = search_input.replace('“', '"').replace('”', '"')
     sort_field = request.args.get('sort')
     sort_order = request.args.get('sortOrder')
@@ -1012,6 +1043,144 @@ def feedback():
 @app.route('/resources')
 def resources():
     return render_template('resources.html')
+
+@app.route('/sets')
+def sets_list():
+    # Retrieve all sets from DynamoDB and render a page listing them
+    response = dynamodb.scan(
+        TableName='Sets'
+    )
+
+    # Build set objects and index by id
+    sets = []
+    by_id = {}
+    for item in response.get('Items', []):
+        set_id = item.get('setId', {}).get('S')
+        if not set_id:
+            continue
+        full_name = item.get('fullName', {}).get('S', set_id)
+        max_element = item.get('maxElement', {}).get('S')
+        # Prefer an explicit number of cards if present
+        number_cards = None
+        if 'numberCards' in item:
+            number_cards = item.get('numberCards', {}).get('N') or item.get('numberCards', {}).get('S')
+        # Fallback to max_element when numberCards is missing
+        cards_count = number_cards or max_element
+        release_date = item.get('releaseDate', {}).get('S') if 'releaseDate' in item else None
+        parent_id = item.get('parentSetId', {}).get('S') if 'parentSetId' in item else None
+
+        s = {
+            'id': set_id,
+            'name': full_name,
+            'max_element': max_element,
+            'cards_count': cards_count,
+            'release_date': release_date,
+            'parent_id': parent_id
+        }
+        sets.append(s)
+        by_id[set_id] = s
+
+    # Heuristic: OP subsets (e.g., sorop) are children of base (e.g., sor) if not explicitly specified
+    for s in sets:
+        if not s.get('parent_id') and s['id'].endswith('op'):
+            base = s['id'][:-2]
+            if base in by_id:
+                s['parent_id'] = base
+
+    # Build groups: parents with children
+    children_map = {}
+    for s in sets:
+        pid = s.get('parent_id')
+        if pid:
+            children_map.setdefault(pid, []).append(s)
+
+    parents = [s for s in sets if not s.get('parent_id')]
+
+    # Sort parents by release_date then name; sort children by release_date then name
+    def sort_key(x):
+        return (x.get('release_date') is None, x.get('release_date') or x.get('name'))
+
+    parents.sort(key=sort_key)
+    for pid, kids in children_map.items():
+        kids.sort(key=sort_key)
+
+    # Synthesize children under promo year sets (e.g., P25) grouped by eventType + sourceSetId
+    promo_parents = [p for p in parents if re.match(r'^P\d{2}$', p['id'] or '', re.IGNORECASE)]
+    for promo in promo_parents:
+        promo_code = promo['id']
+        # Query all cards in this promo set
+        query_kwargs = {
+            'TableName': dynamodb_table,
+            'KeyConditionExpression': 'setId = :sid',
+            'ExpressionAttributeValues': {':sid': {'S': promo_code}}
+        }
+        items = []
+        while True:
+            resp = dynamodb.query(**query_kwargs)
+            items.extend(resp.get('Items', []))
+            if 'LastEvaluatedKey' not in resp:
+                break
+            query_kwargs['ExclusiveStartKey'] = resp['LastEvaluatedKey']
+
+        # Group by eventType + sourceSetId
+        groups_map = {}
+        for it in items:
+            evt = it.get('eventType', {}).get('S') if 'eventType' in it else None
+            src = it.get('sourceSetId', {}).get('S') if 'sourceSetId' in it else None
+            if not evt or not src:
+                continue
+            key = (evt.lower(), src.upper())
+            groups_map[key] = groups_map.get(key, 0) + 1
+
+        promo_children = []
+        for (evt, src), count in groups_map.items():
+            src_name = by_id.get(src, {}).get('name', src)
+            # Pretty event type label for display
+            pretty_evt = ' '.join([w.capitalize() for w in evt.replace('_', ' ').split()])
+            child_name = f"{src_name} — {pretty_evt} Promos"
+            # Use a token-safe form for event (underscores, lowercase)
+            evt_token = evt.replace(' ', '_').lower()
+            link = f"/search?q=set%3A{promo_code.lower()}+and+event:{evt_token}+and+source:{src.lower()}&variants=true"
+            promo_children.append({
+                'id': promo_code,
+                'name': child_name,
+                'cards_count': str(count),
+                'release_date': None,
+                'parent_id': promo_code,
+                'link': link
+            })
+
+            # Also duplicate this promo subset under the base set (e.g., SEC)
+            base_children = children_map.get(src, [])
+            base_children.append({
+                'id': promo_code,
+                'name': child_name,
+                'cards_count': str(count),
+                'release_date': None,
+                'parent_id': src,
+                'link': link
+            })
+            children_map[src] = base_children
+
+        if promo_children:
+            promo_children.sort(key=lambda x: (x['name']))
+            existing = children_map.get(promo_code, [])
+            children_map[promo_code] = existing + promo_children
+
+    # Ensure all child lists are sorted after adding synthetic promo links
+    for pid, kids in children_map.items():
+        try:
+            kids.sort(key=sort_key)
+        except Exception:
+            # Fallback sort by name if structure differs
+            kids.sort(key=lambda x: x.get('name', ''))
+
+    groups = [{
+        'parent': p,
+        'children': children_map.get(p['id'], [])
+    } for p in parents]
+
+    return render_template('sets.html', groups=groups)
 
 @app.route('/advanced')
 def advanced():

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}
+All Sets -
+{% endblock %}
+
+{% block content %}
+<div class="content">
+  <div class="table-container">
+    <table class="checklist-table display" id="setsTable">
+      <thead>
+        <tr>
+          <th>Set</th>
+          <th>Code</th>
+          <th>Cards</th>
+          <th>Release</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for g in groups %}
+          <tr>
+            <td>
+              <a class="card-link" href="/search?q=set%3A{{ g.parent.id }}&variants=true">{{ g.parent.name }}</a>
+            </td>
+            <td>{{ g.parent.id }}</td>
+            <td>{{ g.parent.cards_count or '' }}</td>
+            <td>{{ g.parent.release_date or '' }}</td>
+          </tr>
+          {% for s in g.children %}
+          <tr>
+            <td>
+              <span style="display:inline-block; width: 18px;"></span>
+              ↳ <a class="card-link" href="{{ s.link if s.link else ('/search?q=set%3A' ~ s.id ~ '&variants=true') }}">{{ s.name }}</a>
+            </td>
+            <td>{{ s.id }}</td>
+            <td>{{ s.cards_count or '' }}</td>
+            <td>{{ s.release_date or '' }}</td>
+          </tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (window.jQuery && $.fn.DataTable) {
+      $('#setsTable').DataTable({
+        paging: false,
+        info: false,
+        ordering: false, // keep parent/child grouping intact
+        searching: true,
+        language: { search: 'Filter sets:' },
+        autoWidth: false,
+        columnDefs: [
+          { targets: 0, width: '50%' }, // Set Name
+          { targets: 1, width: '15%' }, // Code
+          { targets: 2, width: '15%', type: 'num' }, // Cards
+          { targets: 3, width: '20%' }  // Release
+        ]
+      });
+    }
+  });
+  </script>
+{% endblock %}
