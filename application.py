@@ -343,6 +343,7 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
             rarity = re.search(r'\b(?:r|rarity):(.+)', expression)
             event = re.search(r'\b(?:event):(.+)', expression)
             source = re.search(r'\b(?:source):(.+)', expression)
+            season = re.search(r'\b(?:season):(.+)', expression)
             card_set = re.search(r'\b(?:s|set):(.+)', expression)
             artist = re.search(r'\b(?:art|artist):(.+)', expression)
             name = re.search(r'(?:name|title):(.+)', expression)
@@ -429,6 +430,31 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
                 filter_expression += f"#{attribute_name} = :{attribute_name}"
                 expression_values.update(construct_expression_value(
                     attribute_name, attribute_value, is_numeric=False))
+                expression_attribute_names.update(
+                    construct_expression_attribute_name(attribute_name))
+            elif season:
+                attribute_name = 'season'
+                raw_val = expression.split(':', 1)[1].strip()
+                # Normalize to both 'sX' lower and 'SX' upper; include numeric fallback
+                av_lower = raw_val.lower()
+                av_upper = raw_val.upper()
+                if not av_lower.startswith('s'):
+                    av_lower_s = 's' + av_lower
+                    av_upper_s = 'S' + av_upper
+                else:
+                    av_lower_s = av_lower
+                    av_upper_s = av_upper
+                result_string += " the season is " + av_lower_s
+                ph_lower = f":{attribute_name}_{counter}_lower"
+                ph_upper = f":{attribute_name}_{counter}_upper"
+                parts = [f"#{attribute_name} = {ph_lower}", f"#{attribute_name} = {ph_upper}"]
+                expression_values[ph_lower] = {'S': av_lower_s}
+                expression_values[ph_upper] = {'S': av_upper_s}
+                if raw_val.isdigit():
+                    ph_num = f":{attribute_name}_{counter}_num"
+                    parts.append(f"#{attribute_name} = {ph_num}")
+                    expression_values[ph_num] = {'S': raw_val}
+                filter_expression += '(' + ' OR '.join(parts) + ')'
                 expression_attribute_names.update(
                     construct_expression_attribute_name(attribute_name))
             elif trait:
@@ -1161,6 +1187,89 @@ def sets_list():
                 'link': link
             })
             children_map[src] = base_children
+
+        # Additionally, create SQ (Sector Qualifier) groupings by season under the promo parent
+        sq_by_season = {}
+        for it in items:
+            evt = it.get('eventType', {}).get('S') if 'eventType' in it else None
+            if not evt or evt.lower() != 'sq':
+                continue
+            season_val = it.get('season', {}).get('S') if 'season' in it else None
+            if not season_val:
+                continue
+            # Normalize season to lowercase 'sX'
+            sv = season_val.lower()
+            if not sv.startswith('s'):
+                sv = f's{sv}'
+            sq_by_season[sv] = sq_by_season.get(sv, 0) + 1
+
+        for sv, count in sq_by_season.items():
+            # Pretty label: Season X
+            season_display = sv[1:] if sv.startswith('s') else sv
+            child_name = f"Sector Qualifier — Season {season_display}"
+            link = f"/search?q=set%3A{promo_code.lower()}+and+event:sq+and+season:{sv}&variants=true"
+            promo_children.append({
+                'id': promo_code,
+                'name': child_name,
+                'cards_count': str(count),
+                'release_date': None,
+                'parent_id': promo_code,
+                'link': link
+            })
+
+        # Create RQ (Regional Qualifier) groupings by season
+        rq_by_season = {}
+        for it in items:
+            evt = it.get('eventType', {}).get('S') if 'eventType' in it else None
+            if not evt or evt.lower() != 'rq':
+                continue
+            season_val = it.get('season', {}).get('S') if 'season' in it else None
+            if not season_val:
+                continue
+            sv = season_val.lower()
+            if not sv.startswith('s'):
+                sv = f's{sv}'
+            rq_by_season[sv] = rq_by_season.get(sv, 0) + 1
+
+        for sv, count in rq_by_season.items():
+            season_display = sv[1:] if sv.startswith('s') else sv
+            child_name = f"Regional Qualifier — Season {season_display}"
+            link = f"/search?q=set%3A{promo_code.lower()}+and+event:rq+and+season:{sv}&variants=true"
+            promo_children.append({
+                'id': promo_code,
+                'name': child_name,
+                'cards_count': str(count),
+                'release_date': None,
+                'parent_id': promo_code,
+                'link': link
+            })
+
+        # Create GC (Galactic Championship) groupings by season
+        gc_by_season = {}
+        for it in items:
+            evt = it.get('eventType', {}).get('S') if 'eventType' in it else None
+            if not evt or evt.lower() != 'gc':
+                continue
+            season_val = it.get('season', {}).get('S') if 'season' in it else None
+            if not season_val:
+                continue
+            sv = season_val.lower()
+            if not sv.startswith('s'):
+                sv = f's{sv}'
+            gc_by_season[sv] = gc_by_season.get(sv, 0) + 1
+
+        for sv, count in gc_by_season.items():
+            season_display = sv[1:] if sv.startswith('s') else sv
+            child_name = f"Galactic Championship — Season {season_display}"
+            link = f"/search?q=set%3A{promo_code.lower()}+and+event:gc+and+season:{sv}&variants=true"
+            promo_children.append({
+                'id': promo_code,
+                'name': child_name,
+                'cards_count': str(count),
+                'release_date': None,
+                'parent_id': promo_code,
+                'link': link
+            })
 
         if promo_children:
             promo_children.sort(key=lambda x: (x['name']))
