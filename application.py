@@ -70,12 +70,35 @@ def get_card(set_id, card_number):
         # Card not found
         return None
 
-def get_variants(variant_numbers):
+def get_variants(base_card_id, current_card_id=None):
+    set_info = dynamodb.scan(
+        TableName='Sets',
+    )
+    set_items = set_info.get('Items', [])
+
     variant_cards = []
-    for variant in variant_numbers:
-        set_id, card_id = variant.split('-', 1)
-        card = get_card(set_id, card_id)
-        variant_cards.append(card)
+    query_kwargs = {
+        'TableName': dynamodb_table,
+        'IndexName': 'base-card-index',
+        'KeyConditionExpression': 'baseCardId = :bid',
+        'ExpressionAttributeValues': {
+            ':bid': {'S': base_card_id}
+        }
+    }
+
+    while True:
+        response = dynamodb.query(**query_kwargs)
+        items = response.get('Items', [])
+        for item in items:
+            card_id = item.get('cardId', {}).get('S')
+            #if current_card_id and card_id == current_card_id:
+            #    continue
+            variant_cards.append(process_item(item, set_items))
+
+        if 'LastEvaluatedKey' not in response:
+            break
+        query_kwargs['ExclusiveStartKey'] = response['LastEvaluatedKey']
+
     return variant_cards
 
 
@@ -858,11 +881,13 @@ def process_item(item, set_info = None):
     # Process a single item from the DynamoDB response and return a card object
     # Extract the necessary attributes from the item
    
-    variants = item.get('variantCardNumbers', {}).get('SS', [])
     number = item['cardNumber']['S']
     artist = item.get('artist', {}).get('S', None)
     variant_type = item.get('variantType', {}).get('S', 'Original')
+    rotation_symbol = item.get('rotationSymbol', {}).get('S', None)
     card_set = item['setId']['S']
+    card_id = item.get('cardId', {}).get('S') or f"{card_set}-{number}"
+    base_card_id = item.get('baseCardId', {}).get('S') or card_id
 
     front_art = 'https://cdn.swu-db.com/images/cards/' + card_set + '/' + number.rstrip("F") + '.png' 
 
@@ -973,8 +998,11 @@ def process_item(item, set_info = None):
         'back_text': back_text,
         'aspects': aspects,
         'is_unique': is_unique,
-        'variants': variants,
+        'variants': [],
+        'card_id': card_id,
+        'base_card_id': base_card_id,
         'variant_type': variant_type,
+        'rotation_symbol': rotation_symbol,
         'max_element': max_element,
         'set_name': set_name,
         'display_price': float(display_price),
@@ -1037,7 +1065,7 @@ def card(set, number):
     my_card = get_card(set, number)
     next_card = get_next_card(set, number)
     prev_card = get_previous_card(set, number)
-    variants = get_variants(my_card["variants"])
+    variants = get_variants(my_card["base_card_id"], my_card["card_id"])
     return render_template('card.html', set=set, number=number, name=my_card['name'], card=my_card, next_card=next_card, prev_card=prev_card, variants=variants)
 
 @app.route('/submit-feedback', methods=['POST'])
