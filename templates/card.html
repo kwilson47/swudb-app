@@ -6,6 +6,7 @@
 
 {% block content %}
 <div class="card-details-container">
+    <div class="card-details-layout">
     <div class="card-details">
         <div class="card-image">
             {% if card.has_back %}
@@ -16,53 +17,8 @@
             {% endif %}
             {% if card.display_price %}
                 <!--<div class="display-price"><a href="{{card.url}}" target="_blank">Buy on TCGplayer ${{ '%.2f'|format(card.display_price) }}</a></div>
-                -->    
-                <div class="card-image-controls">
-                    <div class="card-image-controls-item"> 
-                        <button id="myBtn" class="button-small card-image-controls-item-price myBtn" data-card-set="{{ card.set_name }}" data-card-number="{{ card.number }}" data-card-name="{{ card.name }}" data-tcg-product-id="{{ card.tcg_product_id }}">${{ '%.2f'|format(card.display_price) }}</button>
-                    </div>
-                </div>
-                <!-- The Modal -->
-                <div id="myModal" class="my-modal">
-                    <div class="my-modal-header">
-                        <div class="my-modal-title">
-
-                        </div>
-                    </div>
-
-                    <!-- Modal content -->
-                    <div class="my-modal-body">
-                        <div id="card-price-details-modal-entries">
-                            <div class="card-price-details-modal-entry">
-                                <div class="card-price-details-modal-entry-card-variant-type-name-container">
-                                    "Normal"
-                                </div>
-                                <div class="card-price-details-modal-entry-prices">
-                                    <div class="card-price-details-modal-entry-price">
-                                        <span class="card-price-details-modal-entry-price-label"> Market </span>
-                                        <span class="card-price-details-modal-entry-price-value"> $117 </span>
-                                    </div>
-                                </div>
-                                <a href="{{card.url}}" rel="external nofollow" target="_blank" class="card-price-details-modal-entry-vendor-button button button-plain button-small">
-                                    <span aria-hidden="true" class="button-icon fa-solid fa-up-right-from-square"></span>
-                                    View on TCGplayer
-                                </a>
-                            </div>
-                       
-                        </div>
-                        
-                    </div>
-
-                    <div class="my-modal-footer">
-                    
-                        <div class="modal-footer-buttons">
-                            <button type="button" class="button button-primary close-modal" data-hide="modal">
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
+                -->
+            {% endif %}
             
         </div>
         <div class="card-info">
@@ -229,47 +185,36 @@
         </div>
     </div>
     {% if variants %}
-    <div class="variants-container">
-        
-        <h3 style="text-align: center;">Variants</h3>
-        <div class="card-grid-container">
-            <div class="card-grid">
+    <aside class="variants-panel">
+        <h3>Prints</h3>
+        <ul class="variants-list">
         {% for variant in variants %}
-        <div class="variant-container">
-        <h4 style="text-align: center;">{{ variant.variant_type }}</h4>
-        <div class="card-img variant-img">
-                {% if variant.has_back %}
-                <a href="{{ url_for('card', set=variant.set, number=variant.number) }}">
-                    <img {% if variant.is_landscape %}src="{{ variant.v_front_art }}" {% else %}src="{{ variant.front_art }}" {%
-                        endif %} alt="Card Image" {% if variant.is_landscape %}data-front-image="{{ variant.v_front_art }}" {%
-                        else %}data-front-image="{{ variant.front_art }}" {% endif %} data-back-image="{{ variant.back_art }}"
-                        class="card-image toggleable">
-                </a>
-                <button class="toggle-button"></button>
-                {% else %}
-              <!--  <a href="{{ url_for('card', set=variant.set, number=variant.number, name=variant.name|replace(' ', '-')|replace('\"', '
-                    -')|replace('/', '-' )) }}">
-              -->    <a href="{{ url_for('card', set=variant.set, number=variant.number) }}">
-                    <img {% if variant.is_landscape %}src="{{ variant.v_front_art }}" {% else %}src="{{ variant.front_art }}" {%
-                        endif %} alt="Card Image" class="card-image">
-                </a>
-                {% endif %}
-           
-            </div>
-            {% if variant.display_price %}
-                <div class="card-image-controls">
-                    <div class="card-image-controls-item"> 
-                        <button class="button-small card-image-controls-item-price open-modal myBtn" data-card-set="{{ variant.set_name }}" data-card-number="{{ variant.number }}" data-card-name="{{ variant.name }}" data-tcg-product-id="{{ variant.tcg_product_id }}" data-modal-id="myModal{{ loop.index }}">${{ '%.2f'|format(variant.display_price) }}</button>
-                    </div>
+            <li class="variants-list-item{% if variant.set == card.set and variant.number == card.number %} is-current{% endif %}">
+                <div class="variants-row">
+                    <a class="variants-card-link" href="{{ url_for('card', set=variant.set, number=variant.number) }}" {% if variant.set == card.set and variant.number == card.number %}aria-current="true"{% endif %}>
+                        <span class="variants-meta">
+                            <span class="variants-set">{{ variant.set }}</span>
+                            <span class="variants-number">#{{ variant.number_display if variant.number_display else variant.number }}</span>
+                        </span>
+                        <span class="variants-name">{{ variant.variant_type }}</span>
+                    </a>
+                    {% if variant.display_price %}
+                        {% if variant.price_url %}
+                        <a class="variants-price variants-price-link" href="{{ variant.price_url }}" rel="external nofollow" target="_blank">${{ '%.2f'|format(variant.display_price) }}</a>
+                        {% else %}
+                        <span class="variants-price">${{ '%.2f'|format(variant.display_price) }}</span>
+                        {% endif %}
+                    {% endif %}
+                    <span class="variants-preview" aria-hidden="true">
+                        <img {% if variant.is_landscape %}src="{{ variant.v_front_art }}" {% else %}src="{{ variant.front_art }}" {% endif %} alt="">
+                    </span>
                 </div>
-                
-            {% endif %}
-        </div>
+            </li>
         {% endfor %}
-    </div></div>
-        
-    </div>
+        </ul>
+    </aside>
     {% endif %}
+    </div>
     <div class="card-iterator-container">
         {% if prev_card.name %}
             <a href="/card/{{ prev_card.set }}/{{ prev_card.number }}" class="button prev-link">{{ prev_card.name.split(' - ')[0] }}

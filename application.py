@@ -70,6 +70,26 @@ def get_card(set_id, card_number):
         # Card not found
         return None
 
+def get_price_url(tcg_product_id):
+    if not tcg_product_id:
+        return None
+
+    response = dynamodb.query(
+        TableName='Prices',
+        KeyConditionExpression='productId = :pid',
+        ExpressionAttributeValues={
+            ':pid': {'S': tcg_product_id}
+        },
+        Limit=1
+    )
+
+    items = response.get('Items', [])
+    if not items:
+        return None
+
+    return items[0].get('url', {}).get('S', None)
+
+
 def get_variants(base_card_id, current_card_id=None):
     set_info = dynamodb.scan(
         TableName='Sets',
@@ -93,7 +113,9 @@ def get_variants(base_card_id, current_card_id=None):
             card_id = item.get('cardId', {}).get('S')
             #if current_card_id and card_id == current_card_id:
             #    continue
-            variant_cards.append(process_item(item, set_items))
+            variant_card = process_item(item, set_items)
+            variant_card['price_url'] = get_price_url(variant_card.get('tcg_product_id'))
+            variant_cards.append(variant_card)
 
         if 'LastEvaluatedKey' not in response:
             break
@@ -943,7 +965,8 @@ def process_item(item, set_info = None):
         hp = item.get('HP', {}).get('N', None)
     upgrade_power = item.get('upgradePowerDisplay', {}).get('S', None)
     upgrade_hp = item.get('upgradeHPDisplay', {}).get('S', None)
-    name = item['name']['S']
+    raw_name = item['name']['S']
+    name = raw_name
     # back_art = item.get('backArt', {}).get('S', None)
     # artist = item.get('artist', {}).get('S', None)
     is_landscape = item.get('isLandscape', {}).get('BOOL', False)
@@ -971,7 +994,7 @@ def process_item(item, set_info = None):
         aspect_icons.append(aspect_icon_path)
 
     if subtitle is not None:
-        name = name + ' - ' + subtitle
+        name = raw_name + ' - ' + subtitle
 
     # Create and return a card object
     card = {
