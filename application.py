@@ -394,6 +394,7 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
             name = re.search(r'(?:name|title):(.+)', expression)
             variant = re.search(r'(?:variant|v):(.+)', expression)
             keyword = re.search(r'\b(?:k|keyword):(.+)', expression)
+            rotation = re.search(r'\b(?:ro|rotation):(.+)', expression)
 
             if match:
                 attribute_name = 'searchText'
@@ -444,6 +445,17 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
                 comparison_operator = '='
                 attribute_value = expression.split(':', 1)[1].strip().upper()
                 result_string += " the set is " + attribute_value
+                # filter_expression += f"contains (#{attribute_name}, :{attribute_name})"
+                filter_expression += f"#{attribute_name} = :{attribute_name}"
+                expression_values.update(construct_expression_value(
+                    attribute_name, attribute_value, is_numeric=False))
+                expression_attribute_names.update(
+                    construct_expression_attribute_name(attribute_name))
+            elif rotation:
+                attribute_name = 'rotationSymbol'
+                comparison_operator = '='
+                attribute_value = expression.split(':', 1)[1].strip().upper()
+                result_string += " the rotation symbol is " + attribute_value
                 # filter_expression += f"contains (#{attribute_name}, :{attribute_name})"
                 filter_expression += f"#{attribute_name} = :{attribute_name}"
                 expression_values.update(construct_expression_value(
