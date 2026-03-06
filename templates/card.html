@@ -15,6 +15,9 @@
             {% else %}
             <img src="{{ card.front_art }}" alt="Card Image">
             {% endif %}
+            <div class="card-buy-link-container">
+                <a href="{{ card.price_url if card.price_url else card.url }}" class="button card-buy-link" rel="external nofollow" target="_blank">Buy on TcgPlayer</a>
+            </div>
             {% if card.display_price %}
                 <!--<div class="display-price"><a href="{{card.url}}" target="_blank">Buy on TCGplayer ${{ '%.2f'|format(card.display_price) }}</a></div>
                 -->

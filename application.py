@@ -1098,6 +1098,7 @@ def card(set, number):
     # Render the card page template with the retrieved card information
     print(number)
     my_card = get_card(set, number)
+    my_card['price_url'] = get_price_url(my_card.get('tcg_product_id'))
     next_card = get_next_card(set, number)
     prev_card = get_previous_card(set, number)
     variants = get_variants(my_card["base_card_id"], my_card["card_id"])

@@ -785,6 +785,15 @@ code {
     align-items: center;
 }
 
+.card-buy-link-container {
+    text-align: center;
+    margin-top: 12px;
+}
+
+.card-buy-link {
+    display: inline-block;
+}
+
 .button {
     padding: 10px 20px;
     text-decoration: none;
