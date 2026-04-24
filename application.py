@@ -253,7 +253,12 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
         elif expression == 'and':
             result_string += " and "
             continue
-        elif expression.startswith('('):
+        negated = False
+        if expression.startswith('-') and len(expression) > 1:
+            negated = True
+            expression = expression[1:]
+
+        if expression.startswith('('):
             original_length = len(expression)
             expression = expression.lstrip('(')
             stripped_length = len(expression)
@@ -268,6 +273,9 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
             stripped_length = len(expression)
             parentheses_removed = original_length - stripped_length
 
+        if negated:
+            result_string += " not"
+
         if re.search(r'\b(?:a|aspect)(?:<=|<|>|>=|=|:)(.+)', expression):
             attribute_name, comparison_operator, attribute_value = parse_numerical_expression(
                 expression)
@@ -275,77 +283,74 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
             if comparison_operator == ':':
                 comparison_operator = '>='
 
-            result_string += " the aspect " + comparison_operator + " " + attribute_value
-
-            if attribute_value in ('vigilance', 'blue'):
-                attribute_value = 'b'
-            elif attribute_value in ('command', 'green'):
-                attribute_value = 'g'
-            elif attribute_value in ('aggression', 'red'):
-                attribute_value = 'r'
-            elif attribute_value in ('cunning', 'yellow'):
-                attribute_value = 'y'
-            elif attribute_value in ('heroism', 'white'):
-                attribute_value = 'w'
-            elif attribute_value in ('villainy', 'black'):
-                attribute_value = 'k'
-
-            expression_attribute_values = {}
-
-            aspect_counts = {}  # A dictionary to store the counts of each aspect
-
-            # Define the possible aspect abbreviations
-            possible_aspects = ['b', 'g', 'r', 'y', 'w', 'k']
-
-            # Initialize counts for all aspects to 0
-            for aspect in possible_aspects:
-                aspect_counts[aspect] = 0
-
-            # Count the occurrences of each aspect in the string
-            for letter in attribute_value:
-                if letter in possible_aspects:
-                    aspect_counts[letter] += 1
-
-            filter_expression_parts = []
-            # Loop through the aspect counts dictionary to construct conditions
-            for aspect, count in aspect_counts.items():
-                if comparison_operator in ['>', '>='] and count == 0:
-                    continue
-                # Define placeholders for expression attribute names and values
-                expression_attr_name = f'#count_{aspect}'
-                expression_attr_value = f':val_{aspect}'
-
-                if comparison_operator == '>':
-                    filter_expression_parts.append(f'{expression_attr_name} >= {expression_attr_value}')
-                elif comparison_operator == '<':
-                    filter_expression_parts.append(f'{expression_attr_name} <= {expression_attr_value}')
-                else:
-
-                    # Add condition for aspect count
-                    filter_expression_parts.append(f'{expression_attr_name} {comparison_operator} {expression_attr_value}')
-
-                # Populate expression attribute names and values
-                expression_attribute_values[expression_attr_value] = {'N': str(count)}
-                expression_attribute_names[expression_attr_name] = f'{aspect}Count'
-
-            if comparison_operator == '>':
-                # Construct the condition for the sum of aspect attributes
-                filter_expression_parts.append(f'#total_count > :val_total')
-                expression_attribute_values[':val_total'] = {'N': str(len(attribute_value))}
+            if attribute_value.isdigit():
+                result_string += " the aspect count " + comparison_operator + " " + attribute_value
+                value_placeholder = f":val_total_{counter}"
+                filter_expression += f"#total_count {comparison_operator} {value_placeholder}"
+                expression_values[value_placeholder] = {'N': attribute_value}
                 expression_attribute_names['#total_count'] = 'totalCount'
-            if comparison_operator == '<':
-                # Construct the condition for the sum of aspect attributes
-                filter_expression_parts.append(f'#total_count < :val_total')
-                expression_attribute_values[':val_total'] = {'N': str(len(attribute_value))}
-                expression_attribute_names['#total_count'] = 'totalCount'
+            else:
+                result_string += " the aspect " + comparison_operator + " " + attribute_value
 
-            # Combine all filter conditions with 'AND'
-            filter_expression += ' AND '.join(filter_expression_parts)
-            # print(filter_expression)
-            # print(expression_attribute_values)
-            # print(expression_attribute_names)
+                if attribute_value in ('vigilance', 'blue'):
+                    attribute_value = 'b'
+                elif attribute_value in ('command', 'green'):
+                    attribute_value = 'g'
+                elif attribute_value in ('aggression', 'red'):
+                    attribute_value = 'r'
+                elif attribute_value in ('cunning', 'yellow'):
+                    attribute_value = 'y'
+                elif attribute_value in ('heroism', 'white'):
+                    attribute_value = 'w'
+                elif attribute_value in ('villainy', 'black'):
+                    attribute_value = 'k'
 
-            expression_values.update(expression_attribute_values)
+                expression_attribute_values = {}
+
+                aspect_counts = {}  # A dictionary to store the counts of each aspect
+
+                # Define the possible aspect abbreviations
+                possible_aspects = ['b', 'g', 'r', 'y', 'w', 'k']
+
+                # Initialize counts for all aspects to 0
+                for aspect in possible_aspects:
+                    aspect_counts[aspect] = 0
+
+                # Count the occurrences of each aspect in the string
+                for letter in attribute_value:
+                    if letter in possible_aspects:
+                        aspect_counts[letter] += 1
+
+                filter_expression_parts = []
+                # Loop through the aspect counts dictionary to construct conditions
+                for aspect, count in aspect_counts.items():
+                    if comparison_operator in ['>', '>='] and count == 0:
+                        continue
+                    # Use counter-suffixed placeholders so multiple aspect clauses don't collide.
+                    expression_attr_name = f'#count_{aspect}_{counter}'
+                    expression_attr_value = f':val_{aspect}_{counter}'
+
+                    if comparison_operator == '>':
+                        filter_expression_parts.append(f'{expression_attr_name} >= {expression_attr_value}')
+                    elif comparison_operator == '<':
+                        filter_expression_parts.append(f'{expression_attr_name} <= {expression_attr_value}')
+                    else:
+                        filter_expression_parts.append(f'{expression_attr_name} {comparison_operator} {expression_attr_value}')
+
+                    # Populate expression attribute names and values
+                    expression_attribute_values[expression_attr_value] = {'N': str(count)}
+                    expression_attribute_names[expression_attr_name] = f'{aspect}Count'
+
+                if comparison_operator in ('>', '<'):
+                    value_placeholder = f":val_total_{counter}"
+                    filter_expression_parts.append(f"#total_count {comparison_operator} {value_placeholder}")
+                    expression_attribute_values[value_placeholder] = {'N': str(len(attribute_value))}
+                    expression_attribute_names['#total_count'] = 'totalCount'
+
+                # Combine all filter conditions with 'AND'
+                filter_expression += ' AND '.join(filter_expression_parts)
+
+                expression_values.update(expression_attribute_values)
             
         elif re.match(r'^\w+(?:<=|>=|=|!=|<|>)\d+$', expression):
 
@@ -394,7 +399,9 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
             name = re.search(r'(?:name|title):(.+)', expression)
             variant = re.search(r'(?:variant|v):(.+)', expression)
             keyword = re.search(r'\b(?:k|keyword):(.+)', expression)
-            rotation = re.search(r'\b(?:ro|rotation):(.+)', expression)
+            rotation = re.search(r'\b(?:rs|rotation):(.+)', expression)
+            format_legal = re.search(r'\b(?:f|format):(.+)', expression)
+            format_suspended = re.search(r'\b(?:suspended):(.+)', expression)
 
             if match:
                 attribute_name = 'searchText'
@@ -446,9 +453,9 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
                 attribute_value = expression.split(':', 1)[1].strip().upper()
                 result_string += " the set is " + attribute_value
                 # filter_expression += f"contains (#{attribute_name}, :{attribute_name})"
-                filter_expression += f"#{attribute_name} = :{attribute_name}"
-                expression_values.update(construct_expression_value(
-                    attribute_name, attribute_value, is_numeric=False))
+                value_placeholder = f":{attribute_name}_{counter}"
+                filter_expression += f"#{attribute_name} = {value_placeholder}"
+                expression_values[value_placeholder] = {'S': attribute_value}
                 expression_attribute_names.update(
                     construct_expression_attribute_name(attribute_name))
             elif rotation:
@@ -457,11 +464,40 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
                 attribute_value = expression.split(':', 1)[1].strip().upper()
                 result_string += " the rotation symbol is " + attribute_value
                 # filter_expression += f"contains (#{attribute_name}, :{attribute_name})"
-                filter_expression += f"#{attribute_name} = :{attribute_name}"
-                expression_values.update(construct_expression_value(
-                    attribute_name, attribute_value, is_numeric=False))
+                value_placeholder = f":{attribute_name}_{counter}"
+                filter_expression += f"#{attribute_name} = {value_placeholder}"
+                expression_values[value_placeholder] = {'S': attribute_value}
                 expression_attribute_names.update(
                     construct_expression_attribute_name(attribute_name))
+            elif format_legal or format_suspended:
+                raw_format = expression.split(':', 1)[1].strip().lower()
+                fmt_key = re.sub(r'[\s_]+', '', raw_format)
+                if fmt_key in ('premier', 'p'):
+                    attribute_name = 'legalPremier'
+                    fmt_label = 'premier'
+                elif fmt_key in ('eternal', 'e'):
+                    attribute_name = 'legalEternal'
+                    fmt_label = 'eternal'
+                elif fmt_key in ('twinsuns', 'twin', 'ts'):
+                    attribute_name = 'legalTwinSuns'
+                    fmt_label = 'twin suns'
+                else:
+                    attribute_name = None
+                    fmt_label = raw_format
+
+                desired_status = 'suspended' if format_suspended else 'legal'
+                result_string += f" the {fmt_label} format is {desired_status.replace('_', ' ')}"
+
+                if attribute_name:
+                    value_placeholder = f":{attribute_name}_{counter}"
+                    filter_expression += f"#{attribute_name} = {value_placeholder}"
+                    expression_values[value_placeholder] = {'S': desired_status}
+                    expression_attribute_names.update(
+                        construct_expression_attribute_name(attribute_name))
+                else:
+                    expression_attribute_names.update(
+                        construct_expression_attribute_name('setId'))
+                    filter_expression += "(attribute_exists(#setId) AND attribute_not_exists(#setId))"
             elif event:
                 attribute_name = 'eventType'
                 # Support both underscore and space forms (e.g., planetary_qualifier vs planetary qualifier)
@@ -644,6 +680,9 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
                     attribute_name, attribute_value, is_numeric=False))
                 expression_attribute_names.update(
                     construct_expression_attribute_name(attribute_name))
+
+        if negated and filter_expression:
+            filter_expression = f"NOT ({filter_expression})"
 
         for x in range(parentheses_removed):
             filter_expression += ')'
@@ -919,6 +958,9 @@ def process_item(item, set_info = None):
     artist = item.get('artist', {}).get('S', None)
     variant_type = item.get('variantType', {}).get('S', 'Original')
     rotation_symbol = item.get('rotationSymbol', {}).get('S', None)
+    legal_premier = item.get('legalPremier', {}).get('S', None)
+    legal_eternal = item.get('legalEternal', {}).get('S', None)
+    legal_twin_suns = item.get('legalTwinSuns', {}).get('S', None)
     card_set = item['setId']['S']
     card_id = item.get('cardId', {}).get('S') or f"{card_set}-{number}"
     base_card_id = item.get('baseCardId', {}).get('S') or card_id
@@ -1038,6 +1080,9 @@ def process_item(item, set_info = None):
         'base_card_id': base_card_id,
         'variant_type': variant_type,
         'rotation_symbol': rotation_symbol,
+        'legal_premier': legal_premier,
+        'legal_eternal': legal_eternal,
+        'legal_twin_suns': legal_twin_suns,
         'max_element': max_element,
         'set_name': set_name,
         'display_price': float(display_price),

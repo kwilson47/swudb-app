@@ -184,6 +184,34 @@
                     </div>
                     </div>
                 </div> 
+                <div class="card-set">
+                    <div class="card-set-item">
+                        <div class="card-set-title">Format Legality</div>
+                        <div class="card-set-text">
+                            <table class="card-legality-table">
+                                <tr>
+                                    <th>Format</th>
+                                    <th>Status</th>
+                                </tr>
+                                <tr>
+                                    <td>Premier</td>
+                                    {% set premier_status = card.legal_premier|default('unknown') %}
+                                    <td class="legality-status legality-{{ premier_status }}">{{ premier_status|replace('_', ' ')|title }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Eternal</td>
+                                    {% set eternal_status = card.legal_eternal|default('unknown') %}
+                                    <td class="legality-status legality-{{ eternal_status }}">{{ eternal_status|replace('_', ' ')|title }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Twin Suns</td>
+                                    {% set twin_suns_status = card.legal_twin_suns|default('unknown') %}
+                                    <td class="legality-status legality-{{ twin_suns_status }}">{{ twin_suns_status|replace('_', ' ')|title }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

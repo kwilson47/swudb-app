@@ -324,6 +324,50 @@ p {
     justify-content: space-between;
 }
 
+.card-legality-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 6px;
+    font-size: 0.95rem;
+}
+
+.card-legality-table th,
+.card-legality-table td {
+    border: 1px solid rgba(0, 0, 0, 0.25);
+    padding: 6px 8px;
+}
+
+.card-legality-table th {
+    text-align: left;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.card-legality-table td:last-child,
+.card-legality-table th:last-child {
+    text-align: center;
+    font-weight: 700;
+}
+
+.legality-status.legality-legal {
+    background: #dff5e1;
+    color: #1b5e20;
+}
+
+.legality-status.legality-not_legal {
+    background: #fff4cc;
+    color: #7a5b00;
+}
+
+.legality-status.legality-suspended {
+    background: #ffd6d6;
+    color: #7f1d1d;
+}
+
+.legality-status.legality-unknown {
+    background: rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.75);
+}
+
 .card-rarity {
     text-align: right;
     padding-right: 5px;
