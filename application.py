@@ -604,56 +604,46 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
                     construct_expression_attribute_name(attribute_name))
             elif variant:
                 attribute_name = 'variantType'
-                print(expression)
-                attribute_value = expression.split(':', 1)[1].strip().upper()
-                if attribute_value == 'H':
-                    attribute_value = "Hyperspace"
-                    include_all = True
-                elif attribute_value == 'S':
-                    attribute_value = "Showcase"
-                    include_all = True
-                elif attribute_value == 'F':
-                    attribute_value = "Foil"
-                    include_all = True
-                elif attribute_value == 'P':
-                    attribute_value = "Prestige"
-                    include_all = True
-                elif attribute_value == 'Y':
-                    attribute_value = "Hyperspace Foil"
-                    include_all = True
-                elif attribute_value == 'R':
-                    attribute_value = "Prestige Foil"
-                    include_all = True
-                elif attribute_value == 'E':
-                    attribute_value = "Prestige Serialized"
-                    include_all = True
-                elif attribute_value == "A" or attribute_value == "ALL":
-                    include_all = True
-                    result_string += " the variant is " + attribute_value
+                raw_variant = expression.split(':', 1)[1].strip()
+                variant_key = re.sub(r'[\s_-]+', '', raw_variant.lower())
+
+                # Include variants in results when variant: is present, even if variant: isn't the final token.
+                include_all = True
+
+                if variant_key in ("a", "all"):
+                    result_string += " the variant is all"
                     continue
 
+                variant_map = {
+                    'h': 'Hyperspace',
+                    'f': 'Foil',
+                    'hf': 'Hyperspace Foil',
+                    's': 'Showcase',
+                    'p': 'Prestige',
+                    'pf': 'Prestige Foil',
+                    'ps': 'Prestige Serialized',
+                    # Backwards-compatible aliases (older single-letter modes)
+                    'y': 'Hyperspace Foil',
+                    'r': 'Prestige Foil',
+                    'e': 'Prestige Serialized',
+                    # Full-word aliases
+                    'hyperspace': 'Hyperspace',
+                    'foil': 'Foil',
+                    'hyperspacefoil': 'Hyperspace Foil',
+                    'showcase': 'Showcase',
+                    'prestige': 'Prestige',
+                    'prestigefoil': 'Prestige Foil',
+                    'prestigeserialized': 'Prestige Serialized',
+                }
+
+                attribute_value = variant_map.get(variant_key) or raw_variant.replace('_', ' ').replace('-', ' ').title()
                 result_string += " the variant is " + attribute_value
 
-                if include_all == False:
-                    attribute_placeholder = attribute_name + '_' + attribute_value
-                    attribute_placeholder = re.sub(r'[ "\']', '_', attribute_placeholder)
-                    comparison_operator = '='
-                    filter_expression += f"#{attribute_name} = :{attribute_name}"
-                    
-                    expression_values.update(construct_expression_value(
-                        attribute_name, attribute_value, is_numeric=False))
-                    expression_attribute_names.update(
-                        construct_expression_attribute_name(attribute_name))
-                else:
-                    attribute_placeholder = attribute_name + '_' + attribute_value
-                    attribute_placeholder = re.sub(r'[ "\']', '_', attribute_placeholder)
-                    comparison_operator = '='
-                    filter_expression += f"#{attribute_name} = :{attribute_name}"
-                    
-                    expression_values.update(construct_expression_value(
-                        attribute_name, attribute_value, is_numeric=False))
-                    expression_attribute_names.update(
-                        construct_expression_attribute_name(attribute_name))
+                value_placeholder = f":{attribute_name}_{counter}"
+                filter_expression += f"#{attribute_name} = {value_placeholder}"
+                expression_values[value_placeholder] = {'S': attribute_value}
+                expression_attribute_names.update(
+                    construct_expression_attribute_name(attribute_name))
             elif name:
                 attribute_name = 'searchName'
                 comparison_operator = 'contains'
