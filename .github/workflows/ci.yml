@@ -35,7 +35,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.x'
+          python-version: '3.11'
       - name: Run the unit-test gate
         run: 'pip install -r requirements.txt && python -m unittest discover -s tests -q'
 
@@ -48,6 +48,6 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.x'
+          python-version: '3.11'
       - name: Run the preflight gate
         run: 'pip install -r requirements.txt && AWS_EXECUTION_ENV=CI AWS_DEFAULT_REGION=us-east-1 python -c "import application"'

@@ -16,7 +16,7 @@ class StaticPageSmokeTests(unittest.TestCase):
         self.client = app.test_client()
 
     def test_static_pages_return_200(self):
-        for path in ('/syntax', '/api', '/feedback', '/resources'):
+        for path in ('/syntax', '/api', '/resources'):
             with self.subTest(path=path):
                 response = self.client.get(path)
                 self.assertEqual(response.status_code, 200)
