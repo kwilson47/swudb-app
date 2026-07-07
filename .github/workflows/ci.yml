@@ -1,0 +1,53 @@
+name: CI
+
+# CI gate for PRs into the integration branch. Emitted by milestone-bootstrapper
+# from .milestone-config/driver.json (output of #8) — do not hand-edit the command
+# steps or job names here; change them in driver.json and re-run apply/update.
+#
+# The two job names below ("unit-tests" and "preflight") are the
+# required-status-check contexts wired into branch protection. They are a stable
+# contract — branch protection (#12) requires these exact strings and the per-PR
+# merge gate (#13) waits on them. A [TBD] command step means the command was not
+# recorded in driver.json yet; record it and re-emit.
+#
+# Runs on pull_request only: required status checks are evaluated on PRs, so a
+# push-triggered run would gate nothing and only add noise on the protected
+# branch tip.
+
+on:
+  pull_request:
+    branches: ['development']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code under review
+        uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Run the unit-test gate
+        run: 'pip install "setuptools==75.6.0" wheel && pip install --no-build-isolation -r requirements.txt && python -m unittest discover -s tests -q'
+
+  preflight:
+    name: preflight
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code under review
+        uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Run the preflight gate
+        run: 'pip install "setuptools==75.6.0" wheel && pip install --no-build-isolation -r requirements.txt && AWS_EXECUTION_ENV=CI AWS_DEFAULT_REGION=us-east-1 python -c "import application"'

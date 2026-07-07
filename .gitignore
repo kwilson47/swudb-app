@@ -5,3 +5,8 @@
 !.elasticbeanstalk/*.global.yml
 
 __pycache__/
+
+# milestone-bootstrapper per-run scratch (reviewed plan file, then deployed via
+# apply — never committed). Does not match .milestone-config/ (the tracked
+# driver.json / feeder.json profiles).
+.milestone-bootstrapper/

@@ -1,0 +1,26 @@
+{
+  "integrationBranch": "development",
+  "protectedBranch": "main",
+  "sourceGlobs": [
+    "application.py",
+    "templates/**",
+    "static/**",
+    "lambda/**",
+    "scripts/**"
+  ],
+  "uiSurfaceGlobs": [
+    "templates/**",
+    "static/**"
+  ],
+  "versioning": false,
+  "unitTestCmd": "pip install \"setuptools==75.6.0\" wheel && pip install --no-build-isolation -r requirements.txt && python -m unittest discover -s tests -q",
+  "preflightCmd": "pip install \"setuptools==75.6.0\" wheel && pip install --no-build-isolation -r requirements.txt && AWS_EXECUTION_ENV=CI AWS_DEFAULT_REGION=us-east-1 python -c \"import application\"",
+  "nonNegotiables": [
+    "Python 3.11 (EB platform pin)",
+    "Flask 2.3.2",
+    "DynamoDB tables Cards3/Sets are the card-data system of record",
+    "No ORM — direct boto3 DynamoDB client + mysql-connector-python calls only",
+    "AWS region us-east-1"
+  ],
+  "stack": "python"
+}
