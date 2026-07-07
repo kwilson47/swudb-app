@@ -37,7 +37,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Run the unit-test gate
-        run: 'pip install "setuptools==75.6.0" && pip install -r requirements.txt && python -m unittest discover -s tests -q'
+        run: 'pip install "setuptools==75.6.0" wheel && pip install --no-build-isolation -r requirements.txt && python -m unittest discover -s tests -q'
 
   preflight:
     name: preflight
@@ -50,4 +50,4 @@ jobs:
         with:
           python-version: '3.11'
       - name: Run the preflight gate
-        run: 'pip install "setuptools==75.6.0" && pip install -r requirements.txt && AWS_EXECUTION_ENV=CI AWS_DEFAULT_REGION=us-east-1 python -c "import application"'
+        run: 'pip install "setuptools==75.6.0" wheel && pip install --no-build-isolation -r requirements.txt && AWS_EXECUTION_ENV=CI AWS_DEFAULT_REGION=us-east-1 python -c "import application"'
