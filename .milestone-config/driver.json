@@ -13,8 +13,8 @@
     "static/**"
   ],
   "versioning": false,
-  "unitTestCmd": "pip install -r requirements.txt && python -m unittest discover -s tests -q",
-  "preflightCmd": "pip install -r requirements.txt && AWS_EXECUTION_ENV=CI AWS_DEFAULT_REGION=us-east-1 python -c \"import application\"",
+  "unitTestCmd": "pip install \"setuptools==75.6.0\" && pip install -r requirements.txt && python -m unittest discover -s tests -q",
+  "preflightCmd": "pip install \"setuptools==75.6.0\" && pip install -r requirements.txt && AWS_EXECUTION_ENV=CI AWS_DEFAULT_REGION=us-east-1 python -c \"import application\"",
   "nonNegotiables": [
     "Python 3.11 (EB platform pin)",
     "Flask 2.3.2",
