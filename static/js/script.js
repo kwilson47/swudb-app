@@ -15,6 +15,19 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   });
+
+  // Prevent empty navbar searches; show a small toast instead of navigating
+  const navbarSearchForm = document.querySelector('form.bd-search');
+  if (navbarSearchForm) {
+    navbarSearchForm.addEventListener('submit', function (e) {
+      const qInput = navbarSearchForm.querySelector('input[name="q"]');
+      const qVal = (qInput && qInput.value ? qInput.value : '').trim();
+      if (!qVal) {
+        e.preventDefault();
+        showToast('Please enter a search query');
+      }
+    });
+  }
 });
 
 $(document).ready(function(){
@@ -68,53 +81,57 @@ toggleButtons.forEach(button => {
   });
 });
 
-// Get the modal
+// Get the modal (may not exist on every page)
 var modal = document.getElementById("myModal");
 
-// Get the <span> element that closes the modal
-var span = document.getElementsByClassName("close-modal")[0];
+if (modal) {
+  // Get the <span> element that closes the modal
+  var span = document.getElementsByClassName("close-modal")[0];
 
-// When the user clicks on <span> (x), close the modal
-span.onclick = function() {
-  modal.style.display = "none";
-}
-
-// When the user clicks anywhere outside of the modal, close it
-window.onclick = function(event) {
-  if (event.target == modal) {
-    modal.style.display = "none";
+  if (span) {
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+      modal.style.display = "none";
+    }
   }
-}
 
-// Get all buttons that open modals
-var buttons = document.getElementsByClassName("myBtn");
+  // When the user clicks anywhere outside of the modal, close it
+  window.onclick = function(event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
 
-// Function to handle button click event
-for (var i = 0; i < buttons.length; i++) {
-  buttons[i].onclick = function() {
-      modal.style.display = "block";
-      var tcgProductId = this.getAttribute('data-tcg-product-id');
-      var cardSetName = this.getAttribute('data-card-set');
-      var cardName = this.getAttribute('data-card-name');
-      var cardNumber = this.getAttribute('data-card-number');
+  // Get all buttons that open modals
+  var buttons = document.getElementsByClassName("myBtn");
+
+  // Function to handle button click event
+  for (var i = 0; i < buttons.length; i++) {
+    buttons[i].onclick = function() {
+        modal.style.display = "block";
+        var tcgProductId = this.getAttribute('data-tcg-product-id');
+        var cardSetName = this.getAttribute('data-card-set');
+        var cardName = this.getAttribute('data-card-name');
+        var cardNumber = this.getAttribute('data-card-number');
 
 
-      // Make AJAX request to Flask backend
-      $.ajax({
-          type: 'GET',
-          url: '/get_prices',
-          data: {
-              tcg_product_id: tcgProductId
-          },
-          success: function (response) {
-              // Populate modal with data received from backend
-              populateModal(response, cardSetName, cardNumber, cardName);
-          },
-          error: function (xhr, status, error) {
-              console.error('Error:', error);
-          }
-      });
-  };
+        // Make AJAX request to Flask backend
+        $.ajax({
+            type: 'GET',
+            url: '/get_prices',
+            data: {
+                tcg_product_id: tcgProductId
+            },
+            success: function (response) {
+                // Populate modal with data received from backend
+                populateModal(response, cardSetName, cardNumber, cardName);
+            },
+            error: function (xhr, status, error) {
+                console.error('Error:', error);
+            }
+        });
+    };
+  }
 }
 
 // Function to populate modal with data
@@ -150,11 +167,13 @@ function populateModal(data, cardSetName, cardNumber, cardName) {
       modalEntry.append(variantTypeName);
       modalEntry.append(pricesContainer);
 
-      // Append the link
-      var link = $('<a href="' + entry['url'] +'" rel="external nofollow" target="_blank" class="card-price-details-modal-entry-vendor-button button button-plain button-small"></a>');
-      link.append('<span aria-hidden="true" class="button-icon fa-solid fa-up-right-from-square"></span>');
-      link.append('View on TCGplayer');
-      modalEntry.append(link);
+      // Append the link only if we have a Prices-table URL
+      if (entry['url']) {
+          var link = $('<a href="' + entry['url'] +'" rel="external nofollow" target="_blank" class="card-price-details-modal-entry-vendor-button button button-plain button-small"></a>');
+          link.append('<span aria-hidden="true" class="button-icon fa-solid fa-up-right-from-square"></span>');
+          link.append('View on TCGplayer');
+          modalEntry.append(link);
+      }
 
       $('#card-price-details-modal-entries').append(modalEntry);
   });
@@ -181,3 +200,26 @@ function initializeButtons() {
 
 // Call initializeButtons function once during initialization
 initializeButtons();
+
+// Show a Bootstrap toast with a message (fallback to alert if Bootstrap not ready)
+function showToast(message) {
+  var toastEl = document.getElementById('globalToast');
+  if (!toastEl) {
+    // Fallback
+    alert(message);
+    return;
+  }
+  var body = toastEl.querySelector('.toast-body');
+  if (body) {
+    body.textContent = message;
+  }
+  // If Bootstrap JS is loaded, use it; otherwise, fallback
+  if (window.bootstrap && bootstrap.Toast) {
+    var t = bootstrap.Toast.getOrCreateInstance(toastEl);
+    t.show();
+  } else {
+    // Minimal manual show/hide
+    toastEl.classList.add('show');
+    setTimeout(function() { toastEl.classList.remove('show'); }, 2000);
+  }
+}

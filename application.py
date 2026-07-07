@@ -70,12 +70,57 @@ def get_card(set_id, card_number):
         # Card not found
         return None
 
-def get_variants(variant_numbers):
+def get_price_url(tcg_product_id):
+    if not tcg_product_id:
+        return None
+
+    response = dynamodb.query(
+        TableName='Prices',
+        KeyConditionExpression='productId = :pid',
+        ExpressionAttributeValues={
+            ':pid': {'S': tcg_product_id}
+        },
+        Limit=1
+    )
+
+    items = response.get('Items', [])
+    if not items:
+        return None
+
+    return items[0].get('url', {}).get('S', None)
+
+
+def get_variants(base_card_id, current_card_id=None):
+    set_info = dynamodb.scan(
+        TableName='Sets',
+    )
+    set_items = set_info.get('Items', [])
+
     variant_cards = []
-    for variant in variant_numbers:
-        set_id, card_id = variant.split('-', 1)
-        card = get_card(set_id, card_id)
-        variant_cards.append(card)
+    query_kwargs = {
+        'TableName': dynamodb_table,
+        'IndexName': 'base-card-index',
+        'KeyConditionExpression': 'baseCardId = :bid',
+        'ExpressionAttributeValues': {
+            ':bid': {'S': base_card_id}
+        }
+    }
+
+    while True:
+        response = dynamodb.query(**query_kwargs)
+        items = response.get('Items', [])
+        for item in items:
+            card_id = item.get('cardId', {}).get('S')
+            #if current_card_id and card_id == current_card_id:
+            #    continue
+            variant_card = process_item(item, set_items)
+            variant_card['price_url'] = get_price_url(variant_card.get('tcg_product_id'))
+            variant_cards.append(variant_card)
+
+        if 'LastEvaluatedKey' not in response:
+            break
+        query_kwargs['ExclusiveStartKey'] = response['LastEvaluatedKey']
+
     return variant_cards
 
 
@@ -208,7 +253,12 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
         elif expression == 'and':
             result_string += " and "
             continue
-        elif expression.startswith('('):
+        negated = False
+        if expression.startswith('-') and len(expression) > 1:
+            negated = True
+            expression = expression[1:]
+
+        if expression.startswith('('):
             original_length = len(expression)
             expression = expression.lstrip('(')
             stripped_length = len(expression)
@@ -223,6 +273,9 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
             stripped_length = len(expression)
             parentheses_removed = original_length - stripped_length
 
+        if negated:
+            result_string += " not"
+
         if re.search(r'\b(?:a|aspect)(?:<=|<|>|>=|=|:)(.+)', expression):
             attribute_name, comparison_operator, attribute_value = parse_numerical_expression(
                 expression)
@@ -230,77 +283,74 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
             if comparison_operator == ':':
                 comparison_operator = '>='
 
-            result_string += " the aspect " + comparison_operator + " " + attribute_value
-
-            if attribute_value in ('vigilance', 'blue'):
-                attribute_value = 'b'
-            elif attribute_value in ('command', 'green'):
-                attribute_value = 'g'
-            elif attribute_value in ('aggression', 'red'):
-                attribute_value = 'r'
-            elif attribute_value in ('cunning', 'yellow'):
-                attribute_value = 'y'
-            elif attribute_value in ('heroism', 'white'):
-                attribute_value = 'w'
-            elif attribute_value in ('villainy', 'black'):
-                attribute_value = 'k'
-
-            expression_attribute_values = {}
-
-            aspect_counts = {}  # A dictionary to store the counts of each aspect
-
-            # Define the possible aspect abbreviations
-            possible_aspects = ['b', 'g', 'r', 'y', 'w', 'k']
-
-            # Initialize counts for all aspects to 0
-            for aspect in possible_aspects:
-                aspect_counts[aspect] = 0
-
-            # Count the occurrences of each aspect in the string
-            for letter in attribute_value:
-                if letter in possible_aspects:
-                    aspect_counts[letter] += 1
-
-            filter_expression_parts = []
-            # Loop through the aspect counts dictionary to construct conditions
-            for aspect, count in aspect_counts.items():
-                if comparison_operator in ['>', '>='] and count == 0:
-                    continue
-                # Define placeholders for expression attribute names and values
-                expression_attr_name = f'#count_{aspect}'
-                expression_attr_value = f':val_{aspect}'
-
-                if comparison_operator == '>':
-                    filter_expression_parts.append(f'{expression_attr_name} >= {expression_attr_value}')
-                elif comparison_operator == '<':
-                    filter_expression_parts.append(f'{expression_attr_name} <= {expression_attr_value}')
-                else:
-
-                    # Add condition for aspect count
-                    filter_expression_parts.append(f'{expression_attr_name} {comparison_operator} {expression_attr_value}')
-
-                # Populate expression attribute names and values
-                expression_attribute_values[expression_attr_value] = {'N': str(count)}
-                expression_attribute_names[expression_attr_name] = f'{aspect}Count'
-
-            if comparison_operator == '>':
-                # Construct the condition for the sum of aspect attributes
-                filter_expression_parts.append(f'#total_count > :val_total')
-                expression_attribute_values[':val_total'] = {'N': str(len(attribute_value))}
+            if attribute_value.isdigit():
+                result_string += " the aspect count " + comparison_operator + " " + attribute_value
+                value_placeholder = f":val_total_{counter}"
+                filter_expression += f"#total_count {comparison_operator} {value_placeholder}"
+                expression_values[value_placeholder] = {'N': attribute_value}
                 expression_attribute_names['#total_count'] = 'totalCount'
-            if comparison_operator == '<':
-                # Construct the condition for the sum of aspect attributes
-                filter_expression_parts.append(f'#total_count < :val_total')
-                expression_attribute_values[':val_total'] = {'N': str(len(attribute_value))}
-                expression_attribute_names['#total_count'] = 'totalCount'
+            else:
+                result_string += " the aspect " + comparison_operator + " " + attribute_value
 
-            # Combine all filter conditions with 'AND'
-            filter_expression += ' AND '.join(filter_expression_parts)
-            # print(filter_expression)
-            # print(expression_attribute_values)
-            # print(expression_attribute_names)
+                if attribute_value in ('vigilance', 'blue'):
+                    attribute_value = 'b'
+                elif attribute_value in ('command', 'green'):
+                    attribute_value = 'g'
+                elif attribute_value in ('aggression', 'red'):
+                    attribute_value = 'r'
+                elif attribute_value in ('cunning', 'yellow'):
+                    attribute_value = 'y'
+                elif attribute_value in ('heroism', 'white'):
+                    attribute_value = 'w'
+                elif attribute_value in ('villainy', 'black'):
+                    attribute_value = 'k'
 
-            expression_values.update(expression_attribute_values)
+                expression_attribute_values = {}
+
+                aspect_counts = {}  # A dictionary to store the counts of each aspect
+
+                # Define the possible aspect abbreviations
+                possible_aspects = ['b', 'g', 'r', 'y', 'w', 'k']
+
+                # Initialize counts for all aspects to 0
+                for aspect in possible_aspects:
+                    aspect_counts[aspect] = 0
+
+                # Count the occurrences of each aspect in the string
+                for letter in attribute_value:
+                    if letter in possible_aspects:
+                        aspect_counts[letter] += 1
+
+                filter_expression_parts = []
+                # Loop through the aspect counts dictionary to construct conditions
+                for aspect, count in aspect_counts.items():
+                    if comparison_operator in ['>', '>='] and count == 0:
+                        continue
+                    # Use counter-suffixed placeholders so multiple aspect clauses don't collide.
+                    expression_attr_name = f'#count_{aspect}_{counter}'
+                    expression_attr_value = f':val_{aspect}_{counter}'
+
+                    if comparison_operator == '>':
+                        filter_expression_parts.append(f'{expression_attr_name} >= {expression_attr_value}')
+                    elif comparison_operator == '<':
+                        filter_expression_parts.append(f'{expression_attr_name} <= {expression_attr_value}')
+                    else:
+                        filter_expression_parts.append(f'{expression_attr_name} {comparison_operator} {expression_attr_value}')
+
+                    # Populate expression attribute names and values
+                    expression_attribute_values[expression_attr_value] = {'N': str(count)}
+                    expression_attribute_names[expression_attr_name] = f'{aspect}Count'
+
+                if comparison_operator in ('>', '<'):
+                    value_placeholder = f":val_total_{counter}"
+                    filter_expression_parts.append(f"#total_count {comparison_operator} {value_placeholder}")
+                    expression_attribute_values[value_placeholder] = {'N': str(len(attribute_value))}
+                    expression_attribute_names['#total_count'] = 'totalCount'
+
+                # Combine all filter conditions with 'AND'
+                filter_expression += ' AND '.join(filter_expression_parts)
+
+                expression_values.update(expression_attribute_values)
             
         elif re.match(r'^\w+(?:<=|>=|=|!=|<|>)\d+$', expression):
 
@@ -341,11 +391,17 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
             type = re.search(r'\b(?:ty|type):(.+)', expression)
             arena = re.search(r'\b(?:ar|arena):(.+)', expression)
             rarity = re.search(r'\b(?:r|rarity):(.+)', expression)
+            event = re.search(r'\b(?:event):(.+)', expression)
+            source = re.search(r'\b(?:source):(.+)', expression)
+            season = re.search(r'\b(?:season):(.+)', expression)
             card_set = re.search(r'\b(?:s|set):(.+)', expression)
             artist = re.search(r'\b(?:art|artist):(.+)', expression)
             name = re.search(r'(?:name|title):(.+)', expression)
             variant = re.search(r'(?:variant|v):(.+)', expression)
             keyword = re.search(r'\b(?:k|keyword):(.+)', expression)
+            rotation = re.search(r'\b(?:rs|rotation):(.+)', expression)
+            format_legal = re.search(r'\b(?:f|format):(.+)', expression)
+            format_suspended = re.search(r'\b(?:suspended):(.+)', expression)
 
             if match:
                 attribute_name = 'searchText'
@@ -397,9 +453,101 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
                 attribute_value = expression.split(':', 1)[1].strip().upper()
                 result_string += " the set is " + attribute_value
                 # filter_expression += f"contains (#{attribute_name}, :{attribute_name})"
+                value_placeholder = f":{attribute_name}_{counter}"
+                filter_expression += f"#{attribute_name} = {value_placeholder}"
+                expression_values[value_placeholder] = {'S': attribute_value}
+                expression_attribute_names.update(
+                    construct_expression_attribute_name(attribute_name))
+            elif rotation:
+                attribute_name = 'rotationSymbol'
+                comparison_operator = '='
+                attribute_value = expression.split(':', 1)[1].strip().upper()
+                result_string += " the rotation symbol is " + attribute_value
+                # filter_expression += f"contains (#{attribute_name}, :{attribute_name})"
+                value_placeholder = f":{attribute_name}_{counter}"
+                filter_expression += f"#{attribute_name} = {value_placeholder}"
+                expression_values[value_placeholder] = {'S': attribute_value}
+                expression_attribute_names.update(
+                    construct_expression_attribute_name(attribute_name))
+            elif format_legal or format_suspended:
+                raw_format = expression.split(':', 1)[1].strip().lower()
+                fmt_key = re.sub(r'[\s_]+', '', raw_format)
+                if fmt_key in ('premier', 'p'):
+                    attribute_name = 'legalPremier'
+                    fmt_label = 'premier'
+                elif fmt_key in ('eternal', 'e'):
+                    attribute_name = 'legalEternal'
+                    fmt_label = 'eternal'
+                elif fmt_key in ('twinsuns', 'twin', 'ts'):
+                    attribute_name = 'legalTwinSuns'
+                    fmt_label = 'twin suns'
+                else:
+                    attribute_name = None
+                    fmt_label = raw_format
+
+                desired_status = 'suspended' if format_suspended else 'legal'
+                result_string += f" the {fmt_label} format is {desired_status.replace('_', ' ')}"
+
+                if attribute_name:
+                    value_placeholder = f":{attribute_name}_{counter}"
+                    filter_expression += f"#{attribute_name} = {value_placeholder}"
+                    expression_values[value_placeholder] = {'S': desired_status}
+                    expression_attribute_names.update(
+                        construct_expression_attribute_name(attribute_name))
+                else:
+                    expression_attribute_names.update(
+                        construct_expression_attribute_name('setId'))
+                    filter_expression += "(attribute_exists(#setId) AND attribute_not_exists(#setId))"
+            elif event:
+                attribute_name = 'eventType'
+                # Support both underscore and space forms (e.g., planetary_qualifier vs planetary qualifier)
+                raw_val = expression.split(':', 1)[1].strip()
+                av = raw_val.lower()
+                av_space = av.replace('_', ' ')
+                av_underscore = av.replace(' ', '_')
+                pretty_val = av_space
+                result_string += " the event is " + pretty_val
+                # Use OR to match either stored form
+                ph_space = f":{attribute_name}_{counter}_space"
+                ph_underscore = f":{attribute_name}_{counter}_underscore"
+                filter_expression += f"(#{attribute_name} = {ph_space} OR #{attribute_name} = {ph_underscore})"
+                expression_values[ph_space] = {'S': av_space}
+                expression_values[ph_underscore] = {'S': av_underscore}
+                expression_attribute_names.update(
+                    construct_expression_attribute_name(attribute_name))
+            elif source:
+                attribute_name = 'sourceSetId'
+                comparison_operator = '='
+                attribute_value = expression.split(':', 1)[1].strip().upper()
+                result_string += " the source set is " + attribute_value
                 filter_expression += f"#{attribute_name} = :{attribute_name}"
                 expression_values.update(construct_expression_value(
                     attribute_name, attribute_value, is_numeric=False))
+                expression_attribute_names.update(
+                    construct_expression_attribute_name(attribute_name))
+            elif season:
+                attribute_name = 'season'
+                raw_val = expression.split(':', 1)[1].strip()
+                # Normalize to both 'sX' lower and 'SX' upper; include numeric fallback
+                av_lower = raw_val.lower()
+                av_upper = raw_val.upper()
+                if not av_lower.startswith('s'):
+                    av_lower_s = 's' + av_lower
+                    av_upper_s = 'S' + av_upper
+                else:
+                    av_lower_s = av_lower
+                    av_upper_s = av_upper
+                result_string += " the season is " + av_lower_s
+                ph_lower = f":{attribute_name}_{counter}_lower"
+                ph_upper = f":{attribute_name}_{counter}_upper"
+                parts = [f"#{attribute_name} = {ph_lower}", f"#{attribute_name} = {ph_upper}"]
+                expression_values[ph_lower] = {'S': av_lower_s}
+                expression_values[ph_upper] = {'S': av_upper_s}
+                if raw_val.isdigit():
+                    ph_num = f":{attribute_name}_{counter}_num"
+                    parts.append(f"#{attribute_name} = {ph_num}")
+                    expression_values[ph_num] = {'S': raw_val}
+                filter_expression += '(' + ' OR '.join(parts) + ')'
                 expression_attribute_names.update(
                     construct_expression_attribute_name(attribute_name))
             elif trait:
@@ -456,56 +604,46 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
                     construct_expression_attribute_name(attribute_name))
             elif variant:
                 attribute_name = 'variantType'
-                print(expression)
-                attribute_value = expression.split(':', 1)[1].strip().upper()
-                if attribute_value == 'H':
-                    attribute_value = "Hyperspace"
-                    include_all = True
-                elif attribute_value == 'S':
-                    attribute_value = "Showcase"
-                    include_all = True
-                elif attribute_value == 'F':
-                    attribute_value = "Foil"
-                    include_all = True
-                elif attribute_value == 'P':
-                    attribute_value = "Prestige"
-                    include_all = True
-                elif attribute_value == 'Y':
-                    attribute_value = "Hyperspace Foil"
-                    include_all = True
-                elif attribute_value == 'R':
-                    attribute_value = "Prestige Foil"
-                    include_all = True
-                elif attribute_value == 'E':
-                    attribute_value = "Prestige Serialized"
-                    include_all = True
-                elif attribute_value == "A" or attribute_value == "ALL":
-                    include_all = True
-                    result_string += " the variant is " + attribute_value
+                raw_variant = expression.split(':', 1)[1].strip()
+                variant_key = re.sub(r'[\s_-]+', '', raw_variant.lower())
+
+                # Include variants in results when variant: is present, even if variant: isn't the final token.
+                include_all = True
+
+                if variant_key in ("a", "all"):
+                    result_string += " the variant is all"
                     continue
 
+                variant_map = {
+                    'h': 'Hyperspace',
+                    'f': 'Foil',
+                    'hf': 'Hyperspace Foil',
+                    's': 'Showcase',
+                    'p': 'Prestige',
+                    'pf': 'Prestige Foil',
+                    'ps': 'Prestige Serialized',
+                    # Backwards-compatible aliases (older single-letter modes)
+                    'y': 'Hyperspace Foil',
+                    'r': 'Prestige Foil',
+                    'e': 'Prestige Serialized',
+                    # Full-word aliases
+                    'hyperspace': 'Hyperspace',
+                    'foil': 'Foil',
+                    'hyperspacefoil': 'Hyperspace Foil',
+                    'showcase': 'Showcase',
+                    'prestige': 'Prestige',
+                    'prestigefoil': 'Prestige Foil',
+                    'prestigeserialized': 'Prestige Serialized',
+                }
+
+                attribute_value = variant_map.get(variant_key) or raw_variant.replace('_', ' ').replace('-', ' ').title()
                 result_string += " the variant is " + attribute_value
 
-                if include_all == False:
-                    attribute_placeholder = attribute_name + '_' + attribute_value
-                    attribute_placeholder = re.sub(r'[ "\']', '_', attribute_placeholder)
-                    comparison_operator = '='
-                    filter_expression += f"#{attribute_name} = :{attribute_name}"
-                    
-                    expression_values.update(construct_expression_value(
-                        attribute_name, attribute_value, is_numeric=False))
-                    expression_attribute_names.update(
-                        construct_expression_attribute_name(attribute_name))
-                else:
-                    attribute_placeholder = attribute_name + '_' + attribute_value
-                    attribute_placeholder = re.sub(r'[ "\']', '_', attribute_placeholder)
-                    comparison_operator = '='
-                    filter_expression += f"#{attribute_name} = :{attribute_name}"
-                    
-                    expression_values.update(construct_expression_value(
-                        attribute_name, attribute_value, is_numeric=False))
-                    expression_attribute_names.update(
-                        construct_expression_attribute_name(attribute_name))
+                value_placeholder = f":{attribute_name}_{counter}"
+                filter_expression += f"#{attribute_name} = {value_placeholder}"
+                expression_values[value_placeholder] = {'S': attribute_value}
+                expression_attribute_names.update(
+                    construct_expression_attribute_name(attribute_name))
             elif name:
                 attribute_name = 'searchName'
                 comparison_operator = 'contains'
@@ -532,6 +670,9 @@ def search_cards(search_input, sort_field='setnumber', sort_order='asc', leader=
                     attribute_name, attribute_value, is_numeric=False))
                 expression_attribute_names.update(
                     construct_expression_attribute_name(attribute_name))
+
+        if negated and filter_expression:
+            filter_expression = f"NOT ({filter_expression})"
 
         for x in range(parentheses_removed):
             filter_expression += ')'
@@ -803,11 +944,16 @@ def process_item(item, set_info = None):
     # Process a single item from the DynamoDB response and return a card object
     # Extract the necessary attributes from the item
    
-    variants = item.get('variantCardNumbers', {}).get('SS', [])
     number = item['cardNumber']['S']
     artist = item.get('artist', {}).get('S', None)
     variant_type = item.get('variantType', {}).get('S', 'Original')
+    rotation_symbol = item.get('rotationSymbol', {}).get('S', None)
+    legal_premier = item.get('legalPremier', {}).get('S', None)
+    legal_eternal = item.get('legalEternal', {}).get('S', None)
+    legal_twin_suns = item.get('legalTwinSuns', {}).get('S', None)
     card_set = item['setId']['S']
+    card_id = item.get('cardId', {}).get('S') or f"{card_set}-{number}"
+    base_card_id = item.get('baseCardId', {}).get('S') or card_id
 
     front_art = 'https://cdn.swu-db.com/images/cards/' + card_set + '/' + number.rstrip("F") + '.png' 
 
@@ -863,7 +1009,8 @@ def process_item(item, set_info = None):
         hp = item.get('HP', {}).get('N', None)
     upgrade_power = item.get('upgradePowerDisplay', {}).get('S', None)
     upgrade_hp = item.get('upgradeHPDisplay', {}).get('S', None)
-    name = item['name']['S']
+    raw_name = item['name']['S']
+    name = raw_name
     # back_art = item.get('backArt', {}).get('S', None)
     # artist = item.get('artist', {}).get('S', None)
     is_landscape = item.get('isLandscape', {}).get('BOOL', False)
@@ -891,7 +1038,7 @@ def process_item(item, set_info = None):
         aspect_icons.append(aspect_icon_path)
 
     if subtitle is not None:
-        name = name + ' - ' + subtitle
+        name = raw_name + ' - ' + subtitle
 
     # Create and return a card object
     card = {
@@ -918,8 +1065,14 @@ def process_item(item, set_info = None):
         'back_text': back_text,
         'aspects': aspects,
         'is_unique': is_unique,
-        'variants': variants,
+        'variants': [],
+        'card_id': card_id,
+        'base_card_id': base_card_id,
         'variant_type': variant_type,
+        'rotation_symbol': rotation_symbol,
+        'legal_premier': legal_premier,
+        'legal_eternal': legal_eternal,
+        'legal_twin_suns': legal_twin_suns,
         'max_element': max_element,
         'set_name': set_name,
         'display_price': float(display_price),
@@ -939,7 +1092,9 @@ def homepage():
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
-    search_input = request.args.get('q')
+    search_input = request.args.get('q', '')
+    if not search_input or not search_input.strip():
+        return redirect(url_for('homepage'))
     search_input = search_input.replace('“', '"').replace('”', '"')
     sort_field = request.args.get('sort')
     sort_order = request.args.get('sortOrder')
@@ -978,23 +1133,24 @@ def card(set, number):
     # Render the card page template with the retrieved card information
     print(number)
     my_card = get_card(set, number)
+    my_card['price_url'] = get_price_url(my_card.get('tcg_product_id'))
     next_card = get_next_card(set, number)
     prev_card = get_previous_card(set, number)
-    variants = get_variants(my_card["variants"])
+    variants = get_variants(my_card["base_card_id"], my_card["card_id"])
     return render_template('card.html', set=set, number=number, name=my_card['name'], card=my_card, next_card=next_card, prev_card=prev_card, variants=variants)
 
-# @app.route('/submit-feedback', methods=['POST'])
-# def submit_feedback():
-#     message = request.form.get('message')
+@app.route('/submit-feedback', methods=['POST'])
+def submit_feedback():
+    message = request.form.get('message')
 
-#     # Process the feedback data, e.g., publish to SNS
-#     publish_feedback_to_sns(message)
+    # Process the feedback data, e.g., publish to SNS
+    publish_feedback_to_sns(message)
 
-#     # Flash a success message
-#     flash('Your feedback has been submitted successfully!', 'success')
+    # Flash a success message
+    flash('Your feedback has been submitted successfully!', 'success')
 
-#     # Redirect to the homepage after successful submission
-#     return redirect(url_for('homepage'))
+    # Redirect to the homepage after successful submission
+    return redirect(url_for('homepage'))
 
 @app.route('/syntax')
 def syntax():
@@ -1005,13 +1161,234 @@ def api():
     return render_template('api.html')
 
 
-# @app.route('/feedback')
-# def feedback():
-#     return render_template('feedback.html')
+@app.route('/feedback')
+def feedback():
+    return render_template('feedback.html')
 
 @app.route('/resources')
 def resources():
     return render_template('resources.html')
+
+@app.route('/sets')
+def sets_list():
+    # Retrieve all sets from DynamoDB and render a page listing them
+    response = dynamodb.scan(
+        TableName='Sets'
+    )
+
+    # Build set objects and index by id
+    sets = []
+    by_id = {}
+    for item in response.get('Items', []):
+        set_id = item.get('setId', {}).get('S')
+        if not set_id:
+            continue
+        full_name = item.get('fullName', {}).get('S', set_id)
+        max_element = item.get('maxElement', {}).get('S')
+        # Prefer an explicit number of cards if present
+        number_cards = None
+        if 'numberCards' in item:
+            number_cards = item.get('numberCards', {}).get('N') or item.get('numberCards', {}).get('S')
+        # Fallback to max_element when numberCards is missing
+        cards_count = number_cards or max_element
+        release_date = item.get('releaseDate', {}).get('S') if 'releaseDate' in item else None
+        parent_id = item.get('parentSetId', {}).get('S') if 'parentSetId' in item else None
+
+        s = {
+            'id': set_id,
+            'name': full_name,
+            'max_element': max_element,
+            'cards_count': cards_count,
+            'release_date': release_date,
+            'parent_id': parent_id
+        }
+        sets.append(s)
+        by_id[set_id] = s
+
+    # Heuristic: OP subsets (e.g., sorop) are children of base (e.g., sor) if not explicitly specified
+    for s in sets:
+        if not s.get('parent_id') and s['id'].endswith('op'):
+            base = s['id'][:-2]
+            if base in by_id:
+                s['parent_id'] = base
+
+    # Build groups: parents with children
+    children_map = {}
+    for s in sets:
+        pid = s.get('parent_id')
+        if pid:
+            children_map.setdefault(pid, []).append(s)
+
+    parents = [s for s in sets if not s.get('parent_id')]
+
+    # Sort parents by release_date then name; sort children by release_date then name
+    def sort_key(x):
+        return (x.get('release_date') is None, x.get('release_date') or x.get('name'))
+
+    parents.sort(key=sort_key)
+    for pid, kids in children_map.items():
+        kids.sort(key=sort_key)
+
+    # Synthesize children under promo year sets (e.g., P25) grouped by eventType + sourceSetId
+    promo_parents = [p for p in parents if re.match(r'^P\d{2}$', p['id'] or '', re.IGNORECASE)]
+    for promo in promo_parents:
+        promo_code = promo['id']
+        # Query all cards in this promo set
+        query_kwargs = {
+            'TableName': dynamodb_table,
+            'KeyConditionExpression': 'setId = :sid',
+            'ExpressionAttributeValues': {':sid': {'S': promo_code}}
+        }
+        items = []
+        while True:
+            resp = dynamodb.query(**query_kwargs)
+            items.extend(resp.get('Items', []))
+            if 'LastEvaluatedKey' not in resp:
+                break
+            query_kwargs['ExclusiveStartKey'] = resp['LastEvaluatedKey']
+
+        # Group by eventType + sourceSetId
+        groups_map = {}
+        for it in items:
+            evt = it.get('eventType', {}).get('S') if 'eventType' in it else None
+            src = it.get('sourceSetId', {}).get('S') if 'sourceSetId' in it else None
+            if not evt or not src:
+                continue
+            key = (evt.lower(), src.upper())
+            groups_map[key] = groups_map.get(key, 0) + 1
+
+        promo_children = []
+        for (evt, src), count in groups_map.items():
+            src_name = by_id.get(src, {}).get('name', src)
+            # Pretty event type label for display
+            pretty_evt = ' '.join([w.capitalize() for w in evt.replace('_', ' ').split()])
+            child_name = f"{src_name} — {pretty_evt} Promos"
+            # Use a token-safe form for event (underscores, lowercase)
+            evt_token = evt.replace(' ', '_').lower()
+            link = f"/search?q=set%3A{promo_code.lower()}+and+event:{evt_token}+and+source:{src.lower()}&variants=true"
+            promo_children.append({
+                'id': promo_code,
+                'name': child_name,
+                'cards_count': str(count),
+                'release_date': None,
+                'parent_id': promo_code,
+                'link': link
+            })
+
+            # Also duplicate this promo subset under the base set (e.g., SEC)
+            base_children = children_map.get(src, [])
+            base_children.append({
+                'id': promo_code,
+                'name': child_name,
+                'cards_count': str(count),
+                'release_date': None,
+                'parent_id': src,
+                'link': link
+            })
+            children_map[src] = base_children
+
+        # Additionally, create SQ (Sector Qualifier) groupings by season under the promo parent
+        sq_by_season = {}
+        for it in items:
+            evt = it.get('eventType', {}).get('S') if 'eventType' in it else None
+            if not evt or evt.lower() != 'sq':
+                continue
+            season_val = it.get('season', {}).get('S') if 'season' in it else None
+            if not season_val:
+                continue
+            # Normalize season to lowercase 'sX'
+            sv = season_val.lower()
+            if not sv.startswith('s'):
+                sv = f's{sv}'
+            sq_by_season[sv] = sq_by_season.get(sv, 0) + 1
+
+        for sv, count in sq_by_season.items():
+            # Pretty label: Season X
+            season_display = sv[1:] if sv.startswith('s') else sv
+            child_name = f"Sector Qualifier — Season {season_display}"
+            link = f"/search?q=set%3A{promo_code.lower()}+and+event:sq+and+season:{sv}&variants=true"
+            promo_children.append({
+                'id': promo_code,
+                'name': child_name,
+                'cards_count': str(count),
+                'release_date': None,
+                'parent_id': promo_code,
+                'link': link
+            })
+
+        # Create RQ (Regional Qualifier) groupings by season
+        rq_by_season = {}
+        for it in items:
+            evt = it.get('eventType', {}).get('S') if 'eventType' in it else None
+            if not evt or evt.lower() != 'rq':
+                continue
+            season_val = it.get('season', {}).get('S') if 'season' in it else None
+            if not season_val:
+                continue
+            sv = season_val.lower()
+            if not sv.startswith('s'):
+                sv = f's{sv}'
+            rq_by_season[sv] = rq_by_season.get(sv, 0) + 1
+
+        for sv, count in rq_by_season.items():
+            season_display = sv[1:] if sv.startswith('s') else sv
+            child_name = f"Regional Qualifier — Season {season_display}"
+            link = f"/search?q=set%3A{promo_code.lower()}+and+event:rq+and+season:{sv}&variants=true"
+            promo_children.append({
+                'id': promo_code,
+                'name': child_name,
+                'cards_count': str(count),
+                'release_date': None,
+                'parent_id': promo_code,
+                'link': link
+            })
+
+        # Create GC (Galactic Championship) groupings by season
+        gc_by_season = {}
+        for it in items:
+            evt = it.get('eventType', {}).get('S') if 'eventType' in it else None
+            if not evt or evt.lower() != 'gc':
+                continue
+            season_val = it.get('season', {}).get('S') if 'season' in it else None
+            if not season_val:
+                continue
+            sv = season_val.lower()
+            if not sv.startswith('s'):
+                sv = f's{sv}'
+            gc_by_season[sv] = gc_by_season.get(sv, 0) + 1
+
+        for sv, count in gc_by_season.items():
+            season_display = sv[1:] if sv.startswith('s') else sv
+            child_name = f"Galactic Championship — Season {season_display}"
+            link = f"/search?q=set%3A{promo_code.lower()}+and+event:gc+and+season:{sv}&variants=true"
+            promo_children.append({
+                'id': promo_code,
+                'name': child_name,
+                'cards_count': str(count),
+                'release_date': None,
+                'parent_id': promo_code,
+                'link': link
+            })
+
+        if promo_children:
+            promo_children.sort(key=lambda x: (x['name']))
+            existing = children_map.get(promo_code, [])
+            children_map[promo_code] = existing + promo_children
+
+    # Ensure all child lists are sorted after adding synthetic promo links
+    for pid, kids in children_map.items():
+        try:
+            kids.sort(key=sort_key)
+        except Exception:
+            # Fallback sort by name if structure differs
+            kids.sort(key=lambda x: x.get('name', ''))
+
+    groups = [{
+        'parent': p,
+        'children': children_map.get(p['id'], [])
+    } for p in parents]
+
+    return render_template('sets.html', groups=groups)
 
 @app.route('/advanced')
 def advanced():
@@ -1162,7 +1539,8 @@ def replace_aspects(text):
 
 
     keywords = ['Smuggle', 'Bounties', 'Ambush', 'Bounty', 'Overwhelm', 'Sentinel', 'Shielded', 'Raid 3', 'Saboteur', 'Grit',
-    'Restore 2', 'Restore 1', 'Raid 2', 'Exploit 2', 'Coordinate', 'Exploit 1', 'Exploit 3', 'Exploit 4', 'Raid 1', 'Restore 3', 'Piloting', 'Keywords']
+    'Restore 2', 'Restore 1', 'Raid 2', 'Exploit 2', 'Coordinate', 'Exploit 1', 'Exploit 3', 'Exploit 4', 'Raid 1', 'Restore 3', 'Piloting', 'Keywords', 'Keyword', 'Hidden',
+    'Raid', 'Restore', 'Restore 4', 'Raid 4', 'Plot', 'Support']
 
     for keyword in keywords:
         placeholder = '{' + keyword + '}'

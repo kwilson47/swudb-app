@@ -423,13 +423,28 @@ function buildUpdatedVariantsURL(variantField, selectedDisplayMode) {
             sortFieldName = 'price';
             break;
         }
+        const normalizeNumber = (value) => {
+            if (value === undefined || value === null) return NaN;
+            const cleaned = String(value).replace(/[^0-9.]/g, '');
+            return cleaned ? parseFloat(cleaned) : NaN;
+        };
+
         cards.sort((a, b) => {
             const aProperty = a.dataset[sortFieldName];
             const bProperty = b.dataset[sortFieldName];
   
             if (aProperty === "None") return -sortOrder;
             if (bProperty === "None") return sortOrder;
-  
+
+            if (sortFieldName === 'number') {
+                const numA = normalizeNumber(aProperty);
+                const numB = normalizeNumber(bProperty);
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    if (numA < numB) return -sortOrder;
+                    if (numA > numB) return sortOrder;
+                    return 0;
+                }
+            }
   
             // Convert numeric attributes to numbers for numerical comparison
             const numA = !isNaN(aProperty) ? parseFloat(aProperty) : aProperty;
@@ -449,8 +464,19 @@ function buildUpdatedVariantsURL(variantField, selectedDisplayMode) {
     // Event listener for changes in the select elements
     sortSelect.addEventListener("change", sortCards);
     sortOrderSelect.addEventListener("change", sortCards);
-  
-    
+
+    const viewModeSelect = document.getElementById("view-mode-select");
+    if (viewModeSelect) {
+        viewModeSelect.addEventListener("change", function () {
+            if (viewModeSelect.value === "images") {
+                sortCards();
+            }
+        });
+    }
+
+    if (viewModeSelect && viewModeSelect.value === "images") {
+        sortCards();
+    }
   });
 
 
